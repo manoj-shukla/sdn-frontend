@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ContactDialog } from "@/components/public/contact-dialog";
 
