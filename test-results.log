@@ -1,0 +1,107 @@
+
+Running 3 tests using 1 worker
+
+[1A[2K[1/3] [chromium] › e2e/single-level-workflow.spec.ts:68:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:68:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+[Setup] Starting beforeAll
+
+[1A[2K[Setup] Got adminToken eyJhbGciOi
+
+[1A[2K[Setup] buyerId mapped successfully [33m2736[39m
+
+[1A[2K1. Login as Buyer Admin
+
+[1A[2K2. Roles: Create Single Level Approver
+
+[1A[2K3. Workflows: Create single-step workflow
+
+[1A[2K  1) [chromium] › e2e/single-level-workflow.spec.ts:68:9 › Single[1A[2K  1) [chromium] › e2e/single-level-workflow.spec.ts:68:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier 
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 90000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /create workflow/i })[22m
+
+
+      90 |
+      91 |         console.log("3.2 Opening create workflow dialog");
+    > 92 |         await page.getByRole('button', { name: /new workflow/i }).click();
+         |                                                                      ^
+      93 |         await page.getByLabel(/workflow name/i).fill('Single Step Onboarding');
+      94 |         await page.getByLabel(/description/i).fill('Only one approval stage.');
+      95 |
+        at /Users/shf/sdntech/frontend/e2e/single-level-workflow.spec.ts:92:70
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/single-level-workflow-Sing-e398f-rkflow-and-invites-supplier-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/single-level-workflow-Sing-e398f-rkflow-and-invites-supplier-chromium/error-context.md
+
+
+[1A[2K[2/3] [chromium] › e2e/single-level-workflow.spec.ts:144:9 › Single Level Workflow E2E › Supplier accepts invite, sets up, and submits
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:144:9 › Single Level Workflow E2E › Supplier accepts invite, sets up, and submits
+[Setup] Starting beforeAll
+
+[1A[2K[Setup] Got adminToken eyJhbGciOi
+
+[1A[2K[Setup] buyerId mapped successfully [33m2740[39m
+
+[1A[2K  2) [chromium] › e2e/single-level-workflow.spec.ts:144:9 › Single Level Workflow E2E › Supplier accepts invite, sets up, and submits 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31m""[39m
+
+      143 |
+      144 |     test('Supplier accepts invite, sets up, and submits', async ({ page }) => {
+    > 145 |         expect(supplier.inviteToken).toBeTruthy();
+          |                                      ^
+      146 |
+      147 |         // Magic link
+      148 |         await page.goto(`/auth/accept-invite?token=${supplier.inviteToken}`);
+        at /Users/shf/sdntech/frontend/e2e/single-level-workflow.spec.ts:145:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/single-level-workflow-Sing-34d2a--invite-sets-up-and-submits-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/single-level-workflow-Sing-34d2a--invite-sets-up-and-submits-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/3] [chromium] › e2e/single-level-workflow.spec.ts:205:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:205:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier
+[Setup] St[1A[2K  3) [chromium] › e2e/single-level-workflow.spec.ts:194:9 › Single Level Workflow E2E › Buyer Admin acts as[1A[2K  3) [chromium] › e2e/single-level-workflow.spec.ts:205:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier 
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 90000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /admin/i }).first()[22m
+
+
+      209 |         // **Sandbox RBAC Role Switching functionality**
+      210 |         // They are Admin, but we can verify the dropdown exists and select Single Level Approver
+    > 211 |         await page.getByRole('button', { name: /admin/i }).first().click(); // Click the Sandbox Dropdown trigger
+          |                                                                    ^
+      212 |         await page.getByRole('menuitem', { name: /single level approver/i }).click(); // Select the role
+      213 |
+      214 |         // Go to Approvals
+        at /Users/shf/sdntech/frontend/e2e/single-level-workflow.spec.ts:211:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/single-level-workflow-Sing-84660-r-and-approves-the-supplier-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/single-level-workflow-Sing-84660-r-and-approves-the-supplier-chromium/error-context.md
+
+
+[1A[2K  3 failed
+    [chromium] › e2e/single-level-workflow.spec.ts:68:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier 
+    [chromium] › e2e/single-level-workflow.spec.ts:144:9 › Single Level Workflow E2E › Supplier accepts invite, sets up, and submits 
+    [chromium] › e2e/single-level-workflow.spec.ts:205:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier 
+
+[36m  Serving HTML report at http://localhost:55225. Press Ctrl+C to quit.[39m

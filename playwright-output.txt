@@ -1,0 +1,655 @@
+
+Running 58 tests using 5 workers
+
+[1A[2K[1/58] [chromium] › e2e/supplier-onboarding.spec.ts:119:9 › Supplier Onboarding E2E › 0 – Verify buyer exists
+[1A[2K[2/58] [chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+[1A[2K[3/58] [chromium] › e2e/supplier-full-e2e.spec.ts:439:9 › A: Happy Path › A1 – Super Admin logs in via UI
+[1A[2K[4/58] [chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+[1A[2K[5/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:114:9 › Supplier Onboarding Flow - Multi-Step Validation › 1 – Supplier accepts invite and company details are pre-filled
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+[Setup] Starting beforeAll
+
+[1A[2K[Setup] Got adminToken eyJhbGciOi
+
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+
+
+[1A[2K========================================
+
+[1A[2K   SUPPLIER ONBOARDING E2E FLOW
+
+[1A[2K========================================
+
+[1A[2K
+
+[1A[2KPHASE 1: Setup
+
+[1A[2K[chromium] › e2e/supplier-onboarding.spec.ts:119:9 › Supplier Onboarding E2E › 0 – Verify buyer exists
+[Playwright] Buyer created successfully
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+[Setup] buyerId mapped successfully [33m2857[39m
+
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+✓ Buyer created: [33m2859[39m
+
+[1A[2K✓ Invitation created
+
+[1A[2K
+
+[1A[2KPHASE 2: Supplier Accepts Invitation
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+1. Login as Buyer Admin
+
+[1A[2K[chromium] › e2e/supplier-onboarding.spec.ts:119:9 › Supplier Onboarding E2E › 0 – Verify buyer exists
+[Playwright] Buyer token verified, proceeding with tests
+
+[1A[2K[chromium] › e2e/supplier-onboarding-flow.spec.ts:114:9 › Supplier Onboarding Flow - Multi-Step Validation › 1 – Supplier accepts invite and company details are pre-filled
+[Flow] Invite link created: http://localhost:3000/auth/accept-invite?token=cb65564836a9daa4acd62a8976ed0db47892fbc828d61655f4ca8e7d02a787b0
+
+[1A[2K[Flow] Invite token extracted: cb65564836a9daa4acd6...
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:439:9 › A: Happy Path › A1 – Super Admin logs in via UI
+[A1] Admin logged in ✓
+
+[1A[2K[6/58] [chromium] › e2e/supplier-onboarding.spec.ts:125:9 › Supplier Onboarding E2E › 1 – Buyer logs in and sends an invite
+[1A[2K[7/58] [chromium] › e2e/supplier-full-e2e.spec.ts:450:9 › A: Happy Path › A2 – Admin creates a new Buyer via UI
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+✓ Company name pre-filled
+
+[1A[2K✓ Email pre-filled
+
+[1A[2K[chromium] › e2e/supplier-onboarding-flow.spec.ts:114:9 › Supplier Onboarding Flow - Multi-Step Validation › 1 – Supplier accepts invite and company details are pre-filled
+[Flow] Email pre-filled: flow_supplier_1773016313441@e2e.test
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+2. Roles: Create Single Level Approver
+
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+✓ Supplier registered, ID: [33m6336[39m
+
+[1A[2K✓ W-9 seeded, docId: [33m3361[39m
+
+[1A[2K✓ W-9 verified via API
+
+[1A[2K
+
+[1A[2KPHASE 3: Step-by-Step Onboarding
+
+[1A[2K
+
+[1A[2KSTEP 1: Company Details
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:450:9 › A: Happy Path › A2 – Admin creates a new Buyer via UI
+[A2] Buyer A created, ID = [33m2860[39m
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+3. Workflows: Create single-step workflow
+
+[1A[2K3.1 Goto workflows page
+
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+  → Navigated to: http://localhost:3000/supplier/dashboard?section=company
+
+[1A[2K  ✓ Section loaded
+
+[1A[2K  ✓ Legal name value: E2E Test Supplier 1773016315922
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+3.2 Opening create workflow dialog
+
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+  ✓ Website filled
+
+[1A[2K  ✓ Description filled
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+3.3 Adding 1 step
+
+[1A[2K3.4 Typing step name
+
+[1A[2K3.5 Assigning new role via dropdown
+
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+  ✓ Clicked Next →
+
+[1A[2K
+
+[1A[2KSTEP 2: Address
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:71:9 › Single Level Workflow E2E › Buyer Admin configures role, workflow, and invites supplier
+3.6 Clicking dropdown option
+
+[1A[2K3.7 Submitting workflow creation
+
+[1A[2K3.8 Waiting for success text
+
+[1A[2K3.9 Setting as default
+
+[1A[2K4. Invite Supplier
+
+[1A[2K[8/58] [chromium] › e2e/supplier-full-e2e.spec.ts:486:9 › A: Happy Path › A3 – Buyer logs in and invites Supplier A
+[1A[2K  1) [chromium] › e2e/supplier-onboarding.spec.ts:125:9 › Supplier Onboarding E2E › 1 – Buyer logs in and sends an invite 
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    Error: page.waitForURL: Test timeout of 90000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "**/buyer/dashboard**" until "load"
+    ============================================================
+
+      26 | // Wait for successful redirect after login
+      27 | async function waitForDashboard(page: Page, role: 'buyer' | 'supplier') {
+    > 28 |     await page.waitForURL(`**/${role}/dashboard**`, { timeout: 120000 });
+         |                ^
+      29 |     await page.waitForLoadState('domcontentloaded');
+      30 |     await page.waitForTimeout(500);
+      31 | }
+        at waitForDashboard (/Users/shf/sdntech/frontend/e2e/supplier-onboarding.spec.ts:28:16)
+        at /Users/shf/sdntech/frontend/e2e/supplier-onboarding.spec.ts:127:15
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/supplier-onboarding-Suppli-41085-logs-in-and-sends-an-invite-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/supplier-onboarding-Suppli-41085-logs-in-and-sends-an-invite-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/supplier-onboarding-Suppli-41085-logs-in-and-sends-an-invite-chromium/error-context.md
+
+
+[1A[2K  2) [chromium] › e2e/supplier-onboarding-flow.spec.ts:114:9 › Supplier Onboarding Flow - Multi-Step Validation › 1 – Supplier accepts invite and company details are pre-filled 
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    Error: page.waitForURL: Test timeout of 90000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "**/supplier/dashboard**" until "load"
+    ============================================================
+
+      174 |
+      175 |         // Wait for dashboard to load and redirect to company section
+    > 176 |         await page.waitForURL('**/supplier/dashboard**', { timeout: 60000 });
+          |                    ^
+      177 |
+      178 |         // Navigate explicitly to Company Details just in case
+      179 |         await page.goto('/supplier/dashboard?section=company');
+        at /Users/shf/sdntech/frontend/e2e/supplier-onboarding-flow.spec.ts:176:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/supplier-onboarding-flow-S-a7497-pany-details-are-pre-filled-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/supplier-onboarding-flow-S-a7497-pany-details-are-pre-filled-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/supplier-onboarding-flow-S-a7497-pany-details-are-pre-filled-chromium/error-context.md
+
+
+[1A[2K[9/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:204:9 › Supplier Onboarding Flow - Multi-Step Validation › 2 – Company section: Verify pre-filled data and editable fields
+[1A[2K[10/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:248:9 › Supplier Onboarding Flow - Multi-Step Validation › 3 – Address section: Fill required details with validation
+[1A[2K[11/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:294:9 › Supplier Onboarding Flow - Multi-Step Validation › 4 – Contact section: Verify email pre-filled and fill contact person
+[1A[2K[12/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:326:9 › Supplier Onboarding Flow - Multi-Step Validation › 5 – Tax section: Country-specific validation
+[1A[2K[13/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:351:9 › Supplier Onboarding Flow - Multi-Step Validation › 6 – Bank section: Fill bank details with validation
+[1A[2K[14/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:388:9 › Supplier Onboarding Flow - Multi-Step Validation › 7 – Documents section: Upload required documents
+[1A[2K[15/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:413:9 › Supplier Onboarding Flow - Multi-Step Validation › 8 – Verify all sections are accessible via navigation
+[1A[2K[16/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:457:9 › Supplier Onboarding Flow - Multi-Step Validation › 9 – Verify data persistence across sections
+[1A[2K[17/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:479:9 › Supplier Onboarding Flow - Multi-Step Validation › 10 – Verify validation error messages
+[1A[2K[18/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:527:9 › Supplier Onboarding Flow - Multi-Step Validation › 11 – Submit Profile: Verify all sections complete and submit
+[1A[2K[19/58] [chromium] › e2e/supplier-onboarding-flow.spec.ts:567:9 › Supplier Onboarding Flow - Multi-Step Validation › 12 – After submission: Verify restricted fields are locked
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+  → Navigated to: http://localhost:3000/supplier/dashboard?section=address
+
+[1A[2K  ✓ Section loaded
+
+[1A[2K  ✓ Street address filled
+
+[1A[2K  ✓ City filled
+
+[1A[2K  ✓ Postal code filled
+
+[1A[2K[20/58] [chromium] › e2e/single-level-workflow.spec.ts:185:9 › Single Level Workflow E2E › Supplier accepts invite, sets up, and submits
+[1A[2K  ✓ Clicked Next →
+
+[1A[2K
+
+[1A[2KSTEP 3: Contact Person
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:486:9 › A: Happy Path › A3 – Buyer logs in and invites Supplier A
+[DEBUG] Filled legal name: PW Supplier A 1773016313415
+
+[1A[2K[DEBUG] Filled email: pw_sup_a_1773016313415@e2e.test
+
+[1A[2K[DEBUG] Selected United States
+
+[1A[2K[DEBUG] Clicked Send Invitation
+
+[1A[2K[chromium] › e2e/single-level-workflow.spec.ts:185:9 › Single Level Workflow E2E › Supplier accepts invite, sets up, and submits
+Submit registration...
+
+[1A[2KWaiting for dashboard redirect...
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:486:9 › A: Happy Path › A3 – Buyer logs in and invites Supplier A
+[DEBUG] Confirmation dialog visible
+
+[1A[2K[DEBUG] Clicked confirm in dialog
+
+[1A[2K[21/58] [chromium] › e2e/supplier-onboarding.spec.ts:188:9 › Supplier Onboarding E2E › 2 – Supplier accepts the invite via the magic link
+[1A[2K[22/58] [chromium] › e2e/supplier-step-by-step.spec.ts:80:9 › Supplier Step-by-Step Onboarding › Setup: Create buyer and invite supplier
+[1A[2K[DEBUG] Success dialog is visible
+
+[1A[2K[DEBUG] Invite link from dialog: http://localhost:3000/auth/accept-invite?token=38538673fc8098959f74fdb64830d98827d0bca4a21fe379eda98c742a5344d7
+
+[1A[2K[DEBUG] Clicked Done button
+
+[1A[2K[A3] Invite link from UI: http://localhost:3000/auth/accept-invite?token=38538673fc8098959f74fdb64830d98827d0bca4a21fe379eda98c742a5344d7
+
+[1A[2K[A3] Invite token captured ✓
+
+[1A[2K[23/58] [chromium] › e2e/supplier-full-e2e.spec.ts:512:9 › A: Happy Path › A4 – Supplier accepts invite and verifies details
+[1A[2K[chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow
+  → Navigated to: http://localhost:3000/supplier/dashboard?section=contact
+
+[1A[2K  ✓ Section loaded
+
+[1A[2K  ✓ Contact name filled
+
+[1A[2K  ✓ Position filled
+
+[1A[2K  ✓ Clicked Next →
+
+[1A[2K
+
+[1A[2KSTEP 4: Tax Details
+
+[1A[2K[chromium] › e2e/supplier-onboarding.spec.ts:188:9 › Supplier Onboarding E2E › 2 – Supplier accepts the invite via the magic link
+[Playwright] Buyer created successfully
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:80:9 › Supplier Step-by-Step Onboarding › Setup: Create buyer and invite supplier
+✓ Buyer created: [33m2862[39m
+
+[1A[2K[24/58] [chromium] › e2e/supplier-step-by-step.spec.ts:127:9 › Supplier Step-by-Step Onboarding › Create invitation for supplier
+[1A[2K  3) [chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow 
+
+    [31mTest timeout of 180000ms exceeded.[39m
+
+    Error: page.goto: Test timeout of 180000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://localhost:3000/supplier/dashboard?section=tax", waiting until "domcontentloaded"[22m
+
+
+      201 |         }, { token: supplierToken, supId: supplierId, email: supplierEmail });
+      202 |
+    > 203 |         await page.goto(`/supplier/dashboard?section=${section}`, { waitUntil: 'domcontentloaded' });
+          |                    ^
+      204 |         await waitForNextJs(page);
+      205 |         await page.waitForLoadState('domcontentloaded');
+      206 |         await page.waitForTimeout(2000);
+        at authAndNavigate (/Users/shf/sdntech/frontend/e2e/supplier-complete-flow.spec.ts:203:20)
+        at /Users/shf/sdntech/frontend/e2e/supplier-complete-flow.spec.ts:296:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/supplier-complete-flow-COM-38e5c--End-to-End-Onboarding-Flow-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/supplier-complete-flow-COM-38e5c--End-to-End-Onboarding-Flow-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/supplier-complete-flow-COM-38e5c--End-to-End-Onboarding-Flow-chromium/error-context.md
+
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:127:9 › Supplier Step-by-Step Onboarding › Create invitation for supplier
+✓ Invitation created, token: 75c7b9b30184d7157434...
+
+[1A[2K[25/58] [chromium] › e2e/supplier-onboarding.spec.ts:227:9 › Supplier Onboarding E2E › 3 – Supplier fills in company details
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:512:9 › A: Happy Path › A4 – Supplier accepts invite and verifies details
+[A4] Page loaded, body length: [33m313[39m
+
+[1A[2K[A4] Page mentions legal name: [33mfalse[39m
+
+[1A[2K[26/58] [chromium] › e2e/supplier-onboarding.spec.ts:264:9 › Supplier Onboarding E2E › 4 – Supplier submits profile for review
+[1A[2K[27/58] [chromium] › e2e/supplier-onboarding.spec.ts:301:9 › Supplier Onboarding E2E › 5 – Buyer requests rework from the Approvals page
+[1A[2K[28/58] [chromium] › e2e/supplier-onboarding.spec.ts:377:9 › Supplier Onboarding E2E › 6 – Supplier fixes issue and resubmits
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:127:9 › Supplier Step-by-Step Onboarding › Create invitation for supplier
+✓ Company name pre-filled and locked
+
+[1A[2K✓ Email pre-filled and locked
+
+[1A[2K[29/58] [chromium] › e2e/supplier-onboarding.spec.ts:403:9 › Supplier Onboarding E2E › 7 – Buyer rejects the supplier
+[1A[2K[30/58] [chromium] › e2e/supplier-onboarding.spec.ts:438:9 › Supplier Onboarding E2E › 8 – Supplier resubmits and Buyer approves through all steps
+[1A[2K[31/58] [chromium] › e2e/supplier-onboarding.spec.ts:559:9 › Supplier Onboarding E2E › 9 – Approved supplier sees correct dashboard state
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:512:9 › A: Happy Path › A4 – Supplier accepts invite and verifies details
+[A4] Supplier A accepted, ID = [33m6339[39m
+
+[1A[2K[32/58] [chromium] › e2e/supplier-full-e2e.spec.ts:547:9 › A: Happy Path › A5 – Supplier completes onboarding and submits profile via UI
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:127:9 › Supplier Step-by-Step Onboarding › Create invitation for supplier
+✓ Supplier registered: [33m6340[39m
+
+[1A[2K[33/58] [chromium] › e2e/supplier-step-by-step.spec.ts:190:9 › Supplier Step-by-Step Onboarding › STEP 1: Company Details - Verify pre-filled, add optional info, click Next
+[1A[2K[34/58] [chromium] › e2e/single-level-workflow.spec.ts:287:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:190:9 › Supplier Step-by-Step Onboarding › STEP 1: Company Details - Verify pre-filled, add optional info, click Next
+✓ STEP 1: Legal name pre-filled
+
+[1A[2K✓ STEP 1: Country pre-filled
+
+[1A[2K✓ STEP 1: Website filled
+
+[1A[2K✓ STEP 1: Description filled
+
+[1A[2K✓ STEP 1: Clicked Next → moved to Address section
+
+[1A[2K[35/58] [chromium] › e2e/supplier-step-by-step.spec.ts:223:9 › Supplier Step-by-Step Onboarding › STEP 2: Address - Fill address details, click Next
+[1A[2K  4) [chromium] › e2e/single-level-workflow.spec.ts:287:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveValue[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('sandbox-role-select')
+    Expected: [32m"Single Level Approver"[39m
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveValue" with timeout 10000ms[22m
+    [2m  - waiting for getByTestId('sandbox-role-select')[22m
+    [2m    - waiting for" http://localhost:3000/buyer/dashboard" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:3000/buyer/dashboard"[22m
+
+
+      296 |         // Wait for reload (Role Switcher triggers a reload)
+      297 |         await page.waitForLoadState('load');
+    > 298 |         await expect(page.getByTestId('sandbox-role-select')).toHaveValue('Single Level Approver');
+          |                                                               ^
+      299 |
+      300 |         // Navigate directly to Approvals to avoid sidebar visibility issues
+      301 |         // In SPA, goto might be aborted, so we can use a small delay or click if visible
+        at /Users/shf/sdntech/frontend/e2e/single-level-workflow.spec.ts:298:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/single-level-workflow-Sing-84660-r-and-approves-the-supplier-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/single-level-workflow-Sing-84660-r-and-approves-the-supplier-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/single-level-workflow-Sing-84660-r-and-approves-the-supplier-chromium/error-context.md
+
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:223:9 › Supplier Step-by-Step Onboarding › STEP 2: Address - Fill address details, click Next
+✓ STEP 2: Street address filled
+
+[1A[2K✓ STEP 2: City filled
+
+[1A[2K✓ STEP 2: Postal code filled
+
+[1A[2K✓ STEP 2: Clicked Next → moved to Contact section
+
+[1A[2K[36/58] [chromium] › e2e/supplier-step-by-step.spec.ts:248:9 › Supplier Step-by-Step Onboarding › STEP 3: Contact - Fill contact person, click Next
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:547:9 › A: Happy Path › A5 – Supplier completes onboarding and submits profile via UI
+[A5] Submitted via UI button ✓
+
+[1A[2K[37/58] [chromium] › e2e/supplier-full-e2e.spec.ts:576:9 › A: Happy Path › A6 – Buyer (Procurement role) approves first step
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:248:9 › Supplier Step-by-Step Onboarding › STEP 3: Contact - Fill contact person, click Next
+✓ STEP 3: Contact name filled
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:576:9 › A: Happy Path › A6 – Buyer (Procurement role) approves first step
+[DEBUG] Role selector not visible, assuming current user has permissions for Procurement
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:248:9 › Supplier Step-by-Step Onboarding › STEP 3: Contact - Fill contact person, click Next
+✓ STEP 3: Position filled
+
+[1A[2K✓ STEP 3: Clicked Next → moved to Tax section
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:576:9 › A: Happy Path › A6 – Buyer (Procurement role) approves first step
+[A6] No Procurement pending step (may not be in workflow)
+
+[1A[2K[38/58] [chromium] › e2e/supplier-full-e2e.spec.ts:592:9 › A: Happy Path › A7 – Buyer (Compliance role) approves step
+[1A[2K[39/58] [chromium] › e2e/supplier-step-by-step.spec.ts:269:9 › Supplier Step-by-Step Onboarding › STEP 4: Tax Details - Fill tax ID, click Next
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:592:9 › A: Happy Path › A7 – Buyer (Compliance role) approves step
+[DEBUG] Role selector not visible, assuming current user has permissions for Compliance
+
+[1A[2K[A7] No Compliance step — skipping
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:269:9 › Supplier Step-by-Step Onboarding › STEP 4: Tax Details - Fill tax ID, click Next
+✓ STEP 4: Tax ID (EIN) filled
+
+[1A[2K[40/58] [chromium] › e2e/supplier-full-e2e.spec.ts:606:9 › A: Happy Path › A8 – Buyer (Finance role) approves step
+[1A[2K✓ STEP 4: Clicked Next → moved to Bank section
+
+[1A[2K[41/58] [chromium] › e2e/supplier-step-by-step.spec.ts:285:9 › Supplier Step-by-Step Onboarding › STEP 5: Bank Details - Fill bank info, click Next
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:606:9 › A: Happy Path › A8 – Buyer (Finance role) approves step
+[DEBUG] Role selector not visible, assuming current user has permissions for Finance
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:285:9 › Supplier Step-by-Step Onboarding › STEP 5: Bank Details - Fill bank info, click Next
+✓ STEP 5: Bank name filled
+
+[1A[2K✓ STEP 5: Account number filled
+
+[1A[2K✓ STEP 5: Routing number filled (9 digits for US)
+
+[1A[2K✓ STEP 5: Clicked Next → moved to Documents section
+
+[1A[2K[42/58] [chromium] › e2e/supplier-step-by-step.spec.ts:310:9 › Supplier Step-by-Step Onboarding › STEP 6: Documents - Verify documents section
+[1A[2K  5) [chromium] › e2e/supplier-full-e2e.spec.ts:606:9 › A: Happy Path › A8 – Buyer (Finance role) approves step 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeEnabled[2m([22m[2m)[22m failed
+
+    Locator:  getByRole('button', { name: /^approve$/i }).first()
+    Expected: enabled
+    Received: disabled
+    Timeout:  6000ms
+
+    Call log:
+    [2m  - Expect "toBeEnabled" with timeout 6000ms[22m
+    [2m  - waiting for getByRole('button', { name: /^approve$/i }).first()[22m
+    [2m    9 × locator resolved to <button disabled type="button" data-state="closed" aria-expanded="false" aria-haspopup="dialog" aria-controls="radix-_r_i_" title="All documents must be approved or rejected before approving." class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-green-600…> Approve</button>[22m
+    [2m      - unexpected value "disabled"[22m
+
+
+      287 |     if (!btnVisible) return false;
+      288 |
+    > 289 |     await expect(approveBtn).toBeEnabled({ timeout: 6000 }); // Wait for it to be enabled after doc verifications
+          |                              ^
+      290 |     await approveBtn.click();
+      291 |
+      292 |     // Handle the new confirmation modal
+        at approveViaUI (/Users/shf/sdntech/frontend/e2e/supplier-full-e2e.spec.ts:289:30)
+        at /Users/shf/sdntech/frontend/e2e/supplier-full-e2e.spec.ts:614:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/supplier-full-e2e-A-Happy--9aa55--Finance-role-approves-step-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/supplier-full-e2e-A-Happy--9aa55--Finance-role-approves-step-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/supplier-full-e2e-A-Happy--9aa55--Finance-role-approves-step-chromium/error-context.md
+
+
+[1A[2K[43/58] [chromium] › e2e/supplier-full-e2e.spec.ts:620:9 › A: Happy Path › A9 – Buyer (AP role) completes approval + clean up remaining
+[1A[2K[44/58] [chromium] › e2e/supplier-full-e2e.spec.ts:639:9 › A: Happy Path › A10 – Supplier sees APPROVED status in portal
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:310:9 › Supplier Step-by-Step Onboarding › STEP 6: Documents - Verify documents section
+✓ STEP 6: Found 7 document upload buttons
+
+[1A[2K✓ STEP 6: Documents section ready (uploads required for submission)
+
+[1A[2K[45/58] [chromium] › e2e/supplier-full-e2e.spec.ts:666:9 › B: Rework & Reject Path › B1 – Admin creates Buyer B (via API)
+[1A[2K[46/58] [chromium] › e2e/supplier-step-by-step.spec.ts:328:9 › Supplier Step-by-Step Onboarding › STEP 7: Submit Profile - Submit all information
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:328:9 › Supplier Step-by-Step Onboarding › STEP 7: Submit Profile - Submit all information
+STEP 7: Document upload failed, continuing...
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:666:9 › B: Rework & Reject Path › B1 – Admin creates Buyer B (via API)
+[B1] Buyer B created, ID = [33m2863[39m
+
+[1A[2K[47/58] [chromium] › e2e/supplier-full-e2e.spec.ts:686:9 › B: Rework & Reject Path › B2 – Buyer B logs in and invites Supplier B
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:328:9 › Supplier Step-by-Step Onboarding › STEP 7: Submit Profile - Submit all information
+⚠ STEP 7: Submit button not visible (documents may need upload)
+
+[1A[2K[48/58] [chromium] › e2e/supplier-step-by-step.spec.ts:394:9 › Supplier Step-by-Step Onboarding › VERIFY: Fields are locked after submission
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:394:9 › Supplier Step-by-Step Onboarding › VERIFY: Fields are locked after submission
+✓ VERIFY: Profile submitted via API
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:686:9 › B: Rework & Reject Path › B2 – Buyer B logs in and invites Supplier B
+[DEBUG] Filled legal name: PW Supplier B 1773016614956
+
+[1A[2K[DEBUG] Filled email: pw_sup_b_1773016614956@e2e.test
+
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:394:9 › Supplier Step-by-Step Onboarding › VERIFY: Fields are locked after submission
+✓ VERIFY: Lock message displayed
+
+[1A[2K✓ VERIFY: Navigation button visible (fields locked)
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:686:9 › B: Rework & Reject Path › B2 – Buyer B logs in and invites Supplier B
+[DEBUG] Selected United States
+
+[1A[2K[49/58] [chromium] › e2e/supplier-step-by-step.spec.ts:451:9 › Supplier Step-by-Step Onboarding › SUMMARY: Complete flow walkthrough
+[1A[2K[chromium] › e2e/supplier-step-by-step.spec.ts:451:9 › Supplier Step-by-Step Onboarding › SUMMARY: Complete flow walkthrough
+
+
+[1A[2K========================================
+
+[1A[2K   SUPPLIER ONBOARDING FLOW SUMMARY
+
+[1A[2K========================================
+
+[1A[2K✓ STEP 1: Company Details
+
+[1A[2K  - Pre-filled: Legal Name, Email, Country
+
+[1A[2K  - Added: Website, Description
+
+[1A[2K  - Clicked: Next Step →
+
+[1A[2K
+
+[1A[2K✓ STEP 2: Address
+
+[1A[2K  - Filled: Street, City, Postal Code
+
+[1A[2K  - Clicked: Next Step →
+
+[1A[2K
+
+[1A[2K✓ STEP 3: Contact Person
+
+[1A[2K  - Filled: Full Name, Position
+
+[1A[2K  - Clicked: Next Step →
+
+[1A[2K
+
+[1A[2K✓ STEP 4: Tax Details
+
+[1A[2K  - Filled: Tax ID (EIN)
+
+[1A[2K  - Clicked: Next Step →
+
+[1A[2K
+
+[1A[2K✓ STEP 5: Bank Information
+
+[1A[2K  - Filled: Bank Name, Account Number, Routing Number
+
+[1A[2K  - Clicked: Next Step →
+
+[1A[2K
+
+[1A[2K✓ STEP 6: Documents
+
+[1A[2K  - Upload: W-9 Form, Certificate of Incorporation
+
+[1A[2K
+
+[1A[2K✓ STEP 7: Submit Profile
+
+[1A[2K  - Clicked: Submit Profile
+
+[1A[2K  - Status: SUBMITTED
+
+[1A[2K
+
+[1A[2K✓ VERIFY: All fields locked after submission
+
+[1A[2K========================================
+
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:686:9 › B: Rework & Reject Path › B2 – Buyer B logs in and invites Supplier B
+[DEBUG] Clicked Send Invitation
+
+[1A[2K[DEBUG] Confirmation dialog visible
+
+[1A[2K[DEBUG] Clicked confirm in dialog
+
+[1A[2K[DEBUG] Success dialog is visible
+
+[1A[2K[DEBUG] Invite link from dialog: http://localhost:3000/auth/accept-invite?token=3ced190167ff113b1663d6d9e8aa1ef2f161f048c2c4d72505ee45f7fd5fdffb
+
+[1A[2K[DEBUG] Clicked Done button
+
+[1A[2K[B2] Supplier B invite sent ✓
+
+[1A[2K[50/58] [chromium] › e2e/supplier-full-e2e.spec.ts:708:9 › B: Rework & Reject Path › B3 – Supplier B accepts, onboards, submits via UI
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:708:9 › B: Rework & Reject Path › B3 – Supplier B accepts, onboards, submits via UI
+[B3] Accept page shows legal name: [33mfalse[39m
+
+[1A[2K[B3] Resubmitted via UI ✓
+
+[1A[2K[B3] Supplier B submitted, ID = [33m6341[39m
+
+[1A[2K[51/58] [chromium] › e2e/supplier-full-e2e.spec.ts:752:9 › B: Rework & Reject Path › B4 – Buyer requests REWORK with a comment
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:752:9 › B: Rework & Reject Path › B4 – Buyer requests REWORK with a comment
+[DEBUG] Role selector not visible, assuming current user has permissions for Procurement
+
+[1A[2K[B4] Rework requested ✓, comment: " Tax ID format incorrect. Please update to TAXID-XXXX-XXXX format and resubmit. "
+
+[1A[2K[52/58] [chromium] › e2e/supplier-full-e2e.spec.ts:814:9 › B: Rework & Reject Path › B5 – Supplier sees rework notice and comment in portal
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:814:9 › B: Rework & Reject Path › B5 – Supplier sees rework notice and comment in portal
+[B5] Rework notice visible in supplier portal ✓
+
+[1A[2K[B5] Rework comment visible in Messages ✓
+
+[1A[2K[53/58] [chromium] › e2e/supplier-full-e2e.spec.ts:845:9 › B: Rework & Reject Path › B6 – Supplier fixes data and resubmits from portal
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:845:9 › B: Rework & Reject Path › B6 – Supplier fixes data and resubmits from portal
+[B6] Resubmitted via API fallback
+
+[1A[2K[54/58] [chromium] › e2e/supplier-full-e2e.spec.ts:887:9 › B: Rework & Reject Path › B7 – Buyer rejects the supplier with a reason
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:887:9 › B: Rework & Reject Path › B7 – Buyer rejects the supplier with a reason
+[DEBUG] Role selector not visible, assuming current user has permissions for Procurement
+
+[1A[2K[B7] Supplier B rejected ✓, reason: " Supplier does not meet minimum compliance requirements per our procurement standards. "
+
+[1A[2K[55/58] [chromium] › e2e/supplier-full-e2e.spec.ts:928:9 › B: Rework & Reject Path › B8 – Supplier sees rejection note in portal
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:928:9 › B: Rework & Reject Path › B8 – Supplier sees rejection note in portal
+[B8] Rejection notice visible in supplier portal ✓
+
+[1A[2K[B8] Rejection reason visible in Messages ✓
+
+[1A[2K[56/58] [chromium] › e2e/supplier-full-e2e.spec.ts:962:9 › B: Rework & Reject Path › B9 – Supplier resubmits for final review
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:962:9 › B: Rework & Reject Path › B9 – Supplier resubmits for final review
+[B9] Supplier B resubmitted, status confirmed in portal ✓
+
+[1A[2K[57/58] [chromium] › e2e/supplier-full-e2e.spec.ts:980:9 › B: Rework & Reject Path › B10 – Different Buyer role (Finance) approves final submission
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:980:9 › B: Rework & Reject Path › B10 – Different Buyer role (Finance) approves final submission
+[DEBUG] Role selector not visible, assuming current user has permissions for Procurement
+
+[1A[2K[B10] Supplier B approved: APPROVED
+
+[1A[2K[58/58] [chromium] › e2e/supplier-full-e2e.spec.ts:1000:9 › B: Rework & Reject Path › B11 – Supplier B sees APPROVED status in portal
+[1A[2K[chromium] › e2e/supplier-full-e2e.spec.ts:1000:9 › B: Rework & Reject Path › B11 – Supplier B sees APPROVED status in portal
+[B11] Scenario B — REWORK/REJECT FLOW COMPLETE ✓
+
+[1A[2K  5 failed
+    [chromium] › e2e/single-level-workflow.spec.ts:287:9 › Single Level Workflow E2E › Buyer Admin acts as Single Level Approver and approves the supplier 
+    [chromium] › e2e/supplier-complete-flow.spec.ts:43:5 › COMPLETE: Supplier End-to-End Onboarding Flow 
+    [chromium] › e2e/supplier-full-e2e.spec.ts:606:9 › A: Happy Path › A8 – Buyer (Finance role) approves step 
+    [chromium] › e2e/supplier-onboarding-flow.spec.ts:114:9 › Supplier Onboarding Flow - Multi-Step Validation › 1 – Supplier accepts invite and company details are pre-filled 
+    [chromium] › e2e/supplier-onboarding.spec.ts:125:9 › Supplier Onboarding E2E › 1 – Buyer logs in and sends an invite 
+  8 skipped
+  13 did not run
+  32 passed (6.2m)
+
+[36m  Serving HTML report at http://localhost:51448. Press Ctrl+C to quit.[39m

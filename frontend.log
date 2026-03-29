@@ -1,0 +1,14 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.57:3000
+- Environments: .env.local, .env.development
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 1293ms
+ GET /buyer/roles 200 in 1444ms (compile: 1158ms, proxy.ts: 102ms, render: 183ms)
+ GET /auth/login 200 in 412ms (compile: 103ms, proxy.ts: 146ms, render: 163ms)
