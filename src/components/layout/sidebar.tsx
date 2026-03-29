@@ -19,7 +19,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { LogOut, User, FileText, LayoutDashboard, ClipboardCheck, Send, MapPin, Users, CreditCard, KeyRound, Loader2 } from "lucide-react";
+import { LogOut, User, FileText, LayoutDashboard, ClipboardCheck, Send, MapPin, Users, CreditCard, KeyRound, Loader2, Pin, PinOff, PanelLeftClose, PanelLeftOpen, ChevronLeft } from "lucide-react";
 import apiClient from "@/lib/api/client";
 
 import { useEffect, useState } from "react";
@@ -37,18 +37,58 @@ export function Sidebar() {
     const [changingPassword, setChangingPassword] = useState(false);
     const [changeError, setChangeError] = useState<string | null>(null);
     const [changeSuccess, setChangeSuccess] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     // Always call hook, provider is guaranteed by ProtectedLayout now
     const { role: contextRole, canViewApprovals } = useBuyerRole();
 
+    const [isMobile, setIsMobile] = useState(false);
+
     useEffect(() => {
         setIsMounted(true);
+        const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        setIsMobile(mobile);
+
+        // Load pin state from localStorage, default to true (pinned) on desktop
+        const savedPin = localStorage.getItem('sidebar-pinned');
+        if (savedPin !== null) {
+            setIsPinned(savedPin === 'true');
+        } else {
+            setIsPinned(!mobile);
+        }
+
+        const handleResize = () => {
+            const newMobile = window.innerWidth < 768;
+            setIsMobile((prevMobile) => {
+                // Reset pin to default when switching to/from mobile
+                if (newMobile !== prevMobile) {
+                    localStorage.setItem('sidebar-pinned', (!newMobile).toString());
+                    setIsPinned(!newMobile);
+                }
+                return newMobile;
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Persist pin state to localStorage
+    useEffect(() => {
+        if (isMounted) {
+            localStorage.setItem('sidebar-pinned', isPinned.toString());
+        }
+    }, [isPinned, isMounted]);
 
     // Prevent hydration mismatch
     if (!isMounted) {
         return <div className="flex h-screen w-64 flex-col border-r bg-card animate-pulse" />;
     }
+
+    // Determine sidebar state
+    const showFull = !isMobile && (isPinned || isHovered);
+    const sidebarWidth = isMobile || (!showFull && !isHovered) ? 'w-16' : 'w-64';
 
     if (!user) return null;
 
@@ -104,8 +144,6 @@ export function Sidebar() {
         .filter(item => pathname === item.href || pathname.startsWith(item.href + '/'))
         .sort((a, b) => b.href.length - a.href.length)[0];
 
-    const branding = (user as any).branding;
-
     const handleChangePassword = async () => {
         setChangeError(null);
 
@@ -149,9 +187,13 @@ export function Sidebar() {
     };
 
     return (
-        <div className="flex h-screen w-64 flex-col border-r bg-[#0a192f] text-slate-300">
+        <div
+            className={`flex h-screen ${sidebarWidth} flex-col border-r bg-[#0a192f] text-slate-300 transition-all duration-300 ease-in-out group ${!isMobile ? 'hover:w-64' : ''}`}
+            onMouseEnter={() => !isMobile && !isPinned && setIsHovered(true)}
+            onMouseLeave={() => !isMobile && setIsHovered(false)}
+        >
             {/* Header / Logo */}
-            <div className="flex h-16 items-center border-b border-slate-800/50 px-6 gap-3">
+            <div className={`flex h-16 items-center border-b border-slate-800/50 ${showFull ? 'px-6 gap-3' : 'px-3 justify-center'}`}>
                 <div className="relative flex h-9 w-9 items-center justify-center shrink-0">
                     <div className="absolute inset-0 bg-blue-600 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.4)]" />
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-5 w-5 relative">
@@ -160,37 +202,56 @@ export function Sidebar() {
                         <line x1="12" y1="22.08" x2="12" y2="12" />
                     </svg>
                 </div>
-                <div className="flex flex-col leading-tight">
-                    <span className="text-lg font-bold tracking-tight text-white">SDN Tech</span>
-                    <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase">Procurement Platform</span>
-                </div>
+                {showFull && (
+                    <div className="flex flex-col leading-tight flex-1">
+                        <span className="text-lg font-bold tracking-tight text-white">SDN Tech</span>
+                        <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase">Procurement Platform</span>
+                    </div>
+                )}
+                {!isMobile && (
+                    <button
+                        onClick={() => setIsPinned(!isPinned)}
+                        className={`p-1.5 rounded-lg transition-all shrink-0 ${
+                            isPinned
+                                ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                                : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
+                        }`}
+                        title={isPinned ? 'Unpin sidebar (collapse)' : 'Pin sidebar (expand)'}
+                    >
+                        {isPinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
 
                 {/* Buyer AI Assistant Card (Top of Buyer sidebar) */}
                 {user.role.toUpperCase() === 'BUYER' && (
-                    <div className="px-4 mb-6">
-                        <div className="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-xl p-3 border border-blue-500/20 flex items-center gap-3 cursor-pointer hover:from-blue-600/30 hover:to-indigo-600/30 transition-all">
-                            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg text-lg">
+                    <div className={`mb-6 ${showFull ? 'px-4' : 'px-2'}`}>
+                        <div className={`bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-xl border border-blue-500/20 flex items-center cursor-pointer hover:from-blue-600/30 hover:to-indigo-600/30 transition-all ${showFull ? 'p-3 gap-3' : 'p-2 justify-center'}`}>
+                            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg text-lg shrink-0">
                                 🤖
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-bold text-blue-400">SDN Assistant</span>
-                                <span className="text-[10px] text-slate-500">Ask me anything...</span>
-                            </div>
+                            {showFull && (
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-blue-400">SDN Assistant</span>
+                                    <span className="text-[10px] text-slate-500">Ask me anything...</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-                <nav className="space-y-6 px-4">
+                <nav className={`space-y-6 ${showFull ? 'px-4' : 'px-2'}`}>
                     {items.map((entry: NavItem | NavCategory, entryIdx: number) => {
                         if ('category' in entry) {
                             return (
                                 <div key={entryIdx} className="space-y-1">
-                                    <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">
-                                        {entry.category}
-                                    </h3>
+                                    {showFull && (
+                                        <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">
+                                            {entry.category}
+                                        </h3>
+                                    )}
                                     <div className="space-y-0.5">
                                         {entry.items.map((item, itemIdx) => {
                                             const isActive = activeItem?.href === item.href;
@@ -199,28 +260,31 @@ export function Sidebar() {
                                                     key={itemIdx}
                                                     href={item.href}
                                                     className={cn(
-                                                        "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200",
+                                                        "group flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200",
+                                                        showFull ? "gap-3" : "justify-center",
                                                         isActive
                                                             ? "bg-blue-600/10 text-blue-400 shadow-[inset_0_0_10px_rgba(37,99,235,0.1)] border border-blue-500/20"
                                                             : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
                                                     )}
                                                 >
                                                     <item.icon className={cn(
-                                                        "h-4 w-4 transition-colors",
+                                                        "h-4 w-4 transition-colors shrink-0",
                                                         isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"
                                                     )} />
-                                                    <span className="flex-1">{item.title}</span>
-                                                    {item.badgeCount !== undefined && (
+                                                    {showFull && (
+                                                        <span className="flex-1">{item.title}</span>
+                                                    )}
+                                                    {showFull && item.badgeCount !== undefined && (
                                                         <span className="flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]">
                                                             {item.badgeCount}
                                                         </span>
                                                     )}
-                                                    {item.title === 'Messages' && messagesCount > 0 && (
+                                                    {showFull && item.title === 'Messages' && messagesCount > 0 && (
                                                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
                                                             {messagesCount}
                                                         </span>
                                                     )}
-                                                    {item.title === 'Notifications' && notificationsCount > 0 && (
+                                                    {showFull && item.title === 'Notifications' && notificationsCount > 0 && (
                                                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]">
                                                             {notificationsCount}
                                                         </span>
@@ -240,36 +304,38 @@ export function Sidebar() {
                                 key={entryIdx}
                                 href={entry.href}
                                 className={cn(
-                                    "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200",
+                                    "group flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200",
+                                    showFull ? "gap-3" : "justify-center",
                                     isActive
                                         ? "bg-blue-600/10 text-blue-400 border border-blue-500/20"
                                         : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
                                 )}
                             >
                                 <entry.icon className={cn(
-                                    "h-4 w-4 transition-colors",
+                                    "h-4 w-4 transition-colors shrink-0",
                                     isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"
                                 )} />
-                                <span className="flex-1">{entry.title}</span>
+                                {showFull && <span className="flex-1">{entry.title}</span>}
                             </Link>
                         );
                     })}
                 </nav>
             </div>
-            <div className="border-t p-4 space-y-2">
+            <div className={`border-t space-y-2 ${showFull ? 'p-4' : 'p-2'}`}>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="group w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all duration-200"
+                    className={`group w-full rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all duration-200 ${showFull ? 'justify-start gap-3' : 'justify-center'}`}
                     onClick={() => setIsChangePasswordOpen(true)}
+                    title={showFull ? '' : 'Change Password'}
                 >
-                    <KeyRound className="h-4 w-4 text-slate-500 group-hover:text-slate-300" />
-                    Change Password
+                    <KeyRound className="h-4 w-4 text-slate-500 group-hover:text-slate-300 shrink-0" />
+                    {showFull && <span>Change Password</span>}
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="group w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all duration-200"
+                    className={`group w-full rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all duration-200 ${showFull ? 'justify-start gap-3' : 'justify-center'}`}
                     onClick={() => {
                         logout();
                         // Clear cookies on logout
@@ -277,9 +343,10 @@ export function Sidebar() {
                         document.cookie = "role=; path=/; max-age=0";
                         window.location.href = "/auth/login";
                     }}
+                    title={showFull ? '' : 'Logout'}
                 >
-                    <LogOut className="h-4 w-4 text-slate-500 group-hover:text-slate-300" />
-                    Logout
+                    <LogOut className="h-4 w-4 text-slate-500 group-hover:text-slate-300 shrink-0" />
+                    {showFull && <span>Logout</span>}
                 </Button>
             </div>
 

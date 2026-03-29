@@ -152,7 +152,7 @@ export default function SupplierProfilePage() {
                 </div>
             )}
 
-            {showPendingAlert && (
+            {/* {showPendingAlert && (
                 <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md text-sm mb-4">
                     <strong>Pending Changes:</strong> You have submitted changes that are waiting for approval.
                     <ul className="list-disc ml-5 mt-1">
@@ -161,7 +161,7 @@ export default function SupplierProfilePage() {
                         ))}
                     </ul>
                 </div>
-            )}
+            )} */}
 
             <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-5 mb-6">
