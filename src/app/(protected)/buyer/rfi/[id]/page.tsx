@@ -232,14 +232,14 @@ export default function BuyerRFIEventDetailPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {invitations.map((inv) => (
-                                        <TableRow key={inv.invitationId || inv.id} data-testid={`supplier-invitation-row-${inv.invitationId || inv.id}`}>
+                                        <TableRow key={inv.invitationId} data-testid={`supplier-invitation-row-${inv.invitationId}`}>
                                             <TableCell className="font-medium">
                                                 {inv.supplierName || `Supplier #${inv.supplierId}`}
                                                 {inv.supplierEmail && (
                                                     <div className="text-xs text-muted-foreground">{inv.supplierEmail}</div>
                                                 )}
                                             </TableCell>
-                                            <TableCell data-testid={`supplier-invitation-status-${inv.invitationId || inv.id}`}>
+                                            <TableCell data-testid={`supplier-invitation-status-${inv.invitationId}`}>
                                                 <RFIStatusBadge status={inv.status} />
                                             </TableCell>
                                             <TableCell className="text-sm text-muted-foreground">
