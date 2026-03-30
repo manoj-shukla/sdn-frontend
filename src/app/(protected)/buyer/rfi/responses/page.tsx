@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import apiClient from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,7 +169,7 @@ function ScoreBar({ score, className = "" }: { score: number | null; className?:
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function RFIResponsesPage() {
+function RFIResponsesPageInner() {
     const searchParams = useSearchParams();
     const preselectedEventId = searchParams.get("eventId") ?? "";
 
@@ -1384,5 +1384,13 @@ export default function RFIResponsesPage() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+export default function RFIResponsesPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-64 text-muted-foreground">Loading…</div>}>
+            <RFIResponsesPageInner />
+        </Suspense>
     );
 }
