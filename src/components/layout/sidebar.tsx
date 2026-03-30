@@ -322,32 +322,6 @@ export function Sidebar() {
                     )}
                 </div>
 
-                {/* ── User Profile ── */}
-                <div
-                    className={cn(
-                        "flex items-center border-b border-white/10 shrink-0",
-                        showFull ? "px-4 py-3 gap-3" : "py-3 justify-center"
-                    )}
-                >
-                    <div
-                        className="relative shrink-0 cursor-default"
-                        title={!showFull ? `${displayName} · ${user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}` : undefined}
-                    >
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
-                            {userInitials}
-                        </div>
-                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-[#0d1433]" />
-                    </div>
-                    {showFull && (
-                        <div className="flex flex-col leading-tight min-w-0">
-                            <span className="text-sm font-semibold text-white truncate">{displayName}</span>
-                            <span className="text-[10px] text-blue-300/70 capitalize">
-                                {user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
-                            </span>
-                        </div>
-                    )}
-                </div>
-
                 {/* ── Navigation ── */}
                 <div className="flex-1 overflow-y-auto py-3 scrollbar-hide">
                     <nav className={cn("space-y-4", showFull ? "px-3" : "px-2")}>
