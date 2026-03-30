@@ -88,7 +88,7 @@ export function Header() {
     };
 
     return (
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-6">
+        <header className="flex h-14 items-center gap-4 border-b border-gray-200 bg-gray-50 px-6">
             <div className="flex flex-1 items-center gap-4">
                 {/* Header Actions for Supplier */}
                 {showSubmitButton && (
@@ -183,25 +183,25 @@ export function Header() {
             {(user?.role === 'SUPPLIER' || user?.role === 'BUYER') && (
                 <div className="flex items-center gap-4">
                     {/* Messages Icon */}
-                    <Link href={messagesLink} className={`relative cursor-pointer p-2 rounded-full transition-colors ${displayMessagesCount > 0 ? 'bg-indigo-50/50 hover:bg-indigo-100' : 'hover:bg-muted'}`}>
-                        <Mail className={`h-4 w-4 ${displayMessagesCount > 0 ? 'text-indigo-900' : 'text-muted-foreground'}`} />
+                    <Link href={messagesLink} className={`relative cursor-pointer p-2 rounded-full transition-colors ${displayMessagesCount > 0 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200'}`}>
+                        <Mail className={`h-4 w-4 ${displayMessagesCount > 0 ? 'text-gray-700' : 'text-gray-500'}`} />
                         {displayMessagesCount > 0 && (
-                            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white shadow-sm ring-2 ring-background">
+                            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white shadow-sm ring-2 ring-white">
                                 {displayMessagesCount}
                             </span>
                         )}
                     </Link>
                     {/* Notifications Icon */}
-                    <Link href={notificationLink} className={`relative cursor-pointer p-2 rounded-full transition-colors ${displayUnreadCount > 0 ? 'bg-blue-50/50 hover:bg-blue-100' : 'hover:bg-muted'}`}>
-                        <Bell className={`h-4 w-4 ${displayUnreadCount > 0 ? 'text-blue-900' : 'text-muted-foreground'}`} />
+                    <Link href={notificationLink} className={`relative cursor-pointer p-2 rounded-full transition-colors ${displayUnreadCount > 0 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200'}`}>
+                        <Bell className={`h-4 w-4 ${displayUnreadCount > 0 ? 'text-gray-700' : 'text-gray-500'}`} />
                         {displayUnreadCount > 0 && (
-                            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white shadow-sm ring-2 ring-background">
+                            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white shadow-sm ring-2 ring-white">
                                 {displayUnreadCount}
                             </span>
                         )}
                     </Link>
-                    <div className="flex flex-col items-end justify-center border-l pl-4 gap-1">
-                        <span className="font-semibold text-sm leading-none capitalize">
+                    <div className="flex flex-col items-end justify-center border-l border-gray-200 pl-4 gap-1">
+                        <span className="font-semibold text-sm leading-none capitalize text-gray-800">
                             {user.role === 'SUPPLIER' ? (user.supplierName || "Company Name") : user.username}
                         </span>
                         {user.role === 'SUPPLIER' && (
@@ -213,7 +213,7 @@ export function Header() {
                             </Badge>
                         )}
                         {user.role === 'BUYER' && (
-                            <span className="text-[10px] text-muted-foreground leading-none">Buyer Account</span>
+                            <span className="text-[10px] text-gray-500 leading-none">Buyer Account</span>
                         )}
                     </div>
                 </div>

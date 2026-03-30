@@ -304,12 +304,12 @@ export function MessagesSection() {
     );
 }
 export function CompanySection() {
-    const { companyDetails, setCompanyDetails, markSectionComplete, supplierId, taxDetails, bankDetails, setActiveSection } = useSupplierOnboardingStore();
+    const { status, companyDetails, setCompanyDetails, markSectionComplete, supplierId, taxDetails, bankDetails, setActiveSection } = useSupplierOnboardingStore();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
 
-    // Lock fields if submitted or approved
-    const isLocked = ['PENDING', 'APPROVED', 'SUBMITTED', 'PRE_APPROVED'].includes(user?.approvalStatus || '');
+    // Lock fields ONLY if under active buyer review
+    const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
 
     // Initial check
     useEffect(() => {
@@ -443,10 +443,10 @@ export function CompanySection() {
 }
 
 export function AddressSection() {
-    const { companyDetails, setCompanyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
+    const { status, companyDetails, setCompanyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
-    const isLocked = ['PENDING', 'APPROVED', 'SUBMITTED', 'PRE_APPROVED'].includes(user?.approvalStatus || '');
+    const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
 
     // Initial validation on mount
     useEffect(() => {
@@ -575,10 +575,10 @@ export function AddressSection() {
 }
 
 export function ContactSection() {
-    const { companyDetails, setCompanyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
+    const { status, companyDetails, setCompanyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
-    const isLocked = ['PENDING', 'APPROVED', 'SUBMITTED', 'PRE_APPROVED'].includes(user?.approvalStatus || '');
+    const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
 
     // Initial validation on mount
     useEffect(() => {
@@ -693,11 +693,11 @@ export function ContactSection() {
 
 // --- TAX SECTION (DYNAMIC) ---
 export function TaxSection() {
-    const { taxDetails, setTaxDetails, companyDetails, markSectionComplete, supplierId, bankDetails, setActiveSection } = useSupplierOnboardingStore();
+    const { status, taxDetails, setTaxDetails, companyDetails, markSectionComplete, supplierId, bankDetails, setActiveSection } = useSupplierOnboardingStore();
     const { user } = useAuthStore();
     const isIndia = companyDetails.country === 'India';
     const [isSaving, setIsSaving] = useState(false);
-    const isLocked = ['PENDING', 'APPROVED', 'SUBMITTED', 'PRE_APPROVED'].includes(user?.approvalStatus || '');
+    const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
 
     // Initial validation on mount
     useEffect(() => {
@@ -844,12 +844,11 @@ const REQUIRED_DOCUMENTS_MAP: Record<string, string[]> = {
 };
 
 export function DocumentsSection() {
-    const { documents, updateDocumentStatus, companyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
+    const { status, documents, updateDocumentStatus, companyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
     const { user } = useAuthStore();
     const country = companyDetails.country || 'Default';
 
-    // Lock uploads if submitted or approved
-    const isLocked = ['PENDING', 'APPROVED', 'SUBMITTED', 'PRE_APPROVED'].includes(user?.approvalStatus || '');
+    const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
 
     // File Input Refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1000,11 +999,11 @@ export function DocumentsSection() {
 
 // --- BANK SECTION ---
 export function BankSection() {
-    const { bankDetails, setBankDetails, companyDetails, markSectionComplete, supplierId, taxDetails, setActiveSection } = useSupplierOnboardingStore();
+    const { status, bankDetails, setBankDetails, companyDetails, markSectionComplete, supplierId, taxDetails, setActiveSection } = useSupplierOnboardingStore();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
     const country = companyDetails.country || '';
-    const isLocked = ['PENDING', 'APPROVED', 'SUBMITTED', 'PRE_APPROVED'].includes(user?.approvalStatus || '');
+    const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
 
     // Region Helpers
     const isIndia = country === 'India' || country === 'IND';

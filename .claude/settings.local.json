@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(head -n 175 /Users/shf/sdntech/sdn-frontend/src/app/\\\\\\(protected\\\\\\)/supplier/profile/page.tsx)"
+    ]
+  }
+}

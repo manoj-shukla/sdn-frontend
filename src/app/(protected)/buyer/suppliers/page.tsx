@@ -299,10 +299,10 @@ export default function BuyerSuppliersPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="bg-muted/50 border">
-                    <TabsTrigger data-testid="tab-directory" value="directory" className="data-[state=active]:bg-background">Directory</TabsTrigger>
-                    <TabsTrigger data-testid="tab-invitations" value="invitations" className="data-[state=active]:bg-background">Sent Invitations</TabsTrigger>
-                    <TabsTrigger data-testid="tab-new-invite" value="new_invite" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-                        <Send className="h-3 w-3 mr-2" /> New Invite
+                    <TabsTrigger data-testid="tab-directory" value="directory">Directory</TabsTrigger>
+                    <TabsTrigger data-testid="tab-invitations" value="invitations">Sent Invitations</TabsTrigger>
+                    <TabsTrigger data-testid="tab-new-invite" value="new_invite" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-1.5 transition-all">
+                        <Send className="h-3 w-3" /> New Invite
                     </TabsTrigger>
                 </TabsList>
 

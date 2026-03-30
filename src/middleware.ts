@@ -22,9 +22,15 @@ export function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL("/403", request.url)); // Or redirect to their dashboard
         }
         if (pathname.startsWith("/buyer") && role !== "BUYER") {
-            if (role === "ADMIN") return NextResponse.next(); // Admin might have access? Prompt says "Block unauthorized routes". Admin usually has access, but prompt implies strict lists. 
-            // Prompt: "Admin Permissions: Create & manage buyers, View all suppliers...". Does not explicitly say "View Buyer Dashboard".
-            // Usually Admin has their own dashboard. I will block strictly as per prompt "No unauthorized UI exposure".
+            // Allow ADMIN access to RFI question library only (super admin manages questions)
+            if (role === "ADMIN" && pathname.startsWith("/buyer/rfi/questions")) {
+                return NextResponse.next();
+            }
+            // Allow ADMIN access to the RFI layout root (needed for question library navigation)
+            if (role === "ADMIN" && pathname === "/buyer/rfi") {
+                // Redirect admin to questions page directly
+                return NextResponse.redirect(new URL("/buyer/rfi/questions", request.url));
+            }
             return NextResponse.redirect(new URL("/403", request.url));
         }
         if (pathname.startsWith("/supplier") && role !== "SUPPLIER") {

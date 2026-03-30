@@ -3,11 +3,6 @@ export default function AuthLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center p-4">
-            <div className="w-full max-w-md space-y-8">
-                {children}
-            </div>
-        </div>
-    );
+    // Each auth page (login, forgot-password, etc.) controls its own full-screen layout.
+    return <>{children}</>;
 }

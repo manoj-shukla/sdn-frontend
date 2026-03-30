@@ -9,192 +9,194 @@
         - generic [ref=e10]:
           - generic [ref=e11]: SDN Tech
           - generic [ref=e12]: Procurement Platform
-      - navigation [ref=e14]:
-        - link "Dashboard" [ref=e15] [cursor=pointer]:
+        - button "Unpin sidebar (collapse)" [ref=e13]:
+          - img [ref=e14]
+      - navigation [ref=e17]:
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
           - /url: /admin/dashboard
-          - img [ref=e16]
-          - generic [ref=e21]: Dashboard
-        - link "Buyers" [ref=e22] [cursor=pointer]:
+          - img [ref=e19]
+          - generic [ref=e24]: Dashboard
+        - link "Buyers" [ref=e25] [cursor=pointer]:
           - /url: /admin/buyers
-          - img [ref=e23]
-          - generic [ref=e28]: Buyers
-        - link "Internal Team" [ref=e29] [cursor=pointer]:
+          - img [ref=e26]
+          - generic [ref=e31]: Buyers
+        - link "Internal Team" [ref=e32] [cursor=pointer]:
           - /url: /admin/users
-          - img [ref=e30]
-          - generic [ref=e33]: Internal Team
-        - link "Messages" [ref=e34] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: Internal Team
+        - link "Messages" [ref=e37] [cursor=pointer]:
           - /url: /admin/messages
-          - img [ref=e35]
-          - generic [ref=e38]: Messages
-        - link "Question Library" [ref=e39] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e41]: Messages
+        - link "Question Library" [ref=e42] [cursor=pointer]:
           - /url: /buyer/rfi/questions
-          - img [ref=e40]
-          - generic [ref=e43]: Question Library
-      - generic [ref=e44]:
-        - button "Change Password" [ref=e45]:
-          - img [ref=e46]
-          - text: Change Password
-        - button "Logout" [ref=e49]:
-          - img [ref=e50]
-          - text: Logout
-    - generic [ref=e53]:
-      - banner [ref=e54]
-      - main [ref=e55]:
-        - navigation "Breadcrumb" [ref=e56]:
-          - list [ref=e57]:
-            - listitem [ref=e58]:
-              - link [ref=e59] [cursor=pointer]:
-                - /url: /
-                - img [ref=e60]
+          - img [ref=e43]
+          - generic [ref=e46]: Question Library
+      - generic [ref=e47]:
+        - button "Change Password" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e52]: Change Password
+        - button "Logout" [ref=e53]:
+          - img [ref=e54]
+          - generic [ref=e57]: Logout
+    - generic [ref=e58]:
+      - banner [ref=e59]
+      - main [ref=e60]:
+        - navigation "Breadcrumb" [ref=e61]:
+          - list [ref=e62]:
             - listitem [ref=e63]:
-              - img [ref=e64]
-              - link "admin" [ref=e66] [cursor=pointer]:
+              - link [ref=e64] [cursor=pointer]:
+                - /url: /
+                - img [ref=e65]
+            - listitem [ref=e68]:
+              - img [ref=e69]
+              - link "admin" [ref=e71] [cursor=pointer]:
                 - /url: /admin
-            - listitem [ref=e67]:
-              - img [ref=e68]
-              - generic [ref=e70]: buyers
-        - generic [ref=e71]:
-          - generic [ref=e72]:
-            - generic [ref=e73]:
-              - heading "Buyers" [level=1] [ref=e74]
-              - paragraph [ref=e75]: Manage internal buyer accounts and white-label branding.
-            - button "Add Buyer" [ref=e76]:
-              - img [ref=e77]
+            - listitem [ref=e72]:
+              - img [ref=e73]
+              - generic [ref=e75]: buyers
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - heading "Buyers" [level=1] [ref=e79]
+              - paragraph [ref=e80]: Manage internal buyer accounts and white-label branding.
+            - button "Add Buyer" [ref=e81]:
+              - img [ref=e82]
               - text: Add Buyer
-          - generic [ref=e80]:
-            - generic [ref=e82]:
-              - heading "All Buyers" [level=3] [ref=e83]
-              - generic [ref=e84]:
-                - searchbox "Search buyers..." [ref=e85]
-                - button [ref=e86]:
-                  - img [ref=e87]
-            - generic [ref=e90]:
-              - table [ref=e92]:
-                - rowgroup [ref=e93]:
-                  - row "ID Name Code Email Country Actions" [ref=e94]:
-                    - columnheader "ID" [ref=e95]
-                    - columnheader "Name" [ref=e96]
-                    - columnheader "Code" [ref=e97]
-                    - columnheader "Email" [ref=e98]
-                    - columnheader "Country" [ref=e99]
-                    - columnheader "Actions" [ref=e100]
-                - rowgroup [ref=e101]:
-                  - row "2 sdntech 002 info@sdntechsolutions.com India" [ref=e102]:
-                    - cell "2" [ref=e103]
-                    - cell "sdntech" [ref=e104]
-                    - cell "002" [ref=e105]
-                    - cell "info@sdntechsolutions.com" [ref=e106]
-                    - cell "India" [ref=e107]
-                    - cell [ref=e108]:
-                      - button [ref=e109]:
-                        - img [ref=e110]
-                  - row "3 TCS 12345 tcs@gmail.com India" [ref=e114]:
-                    - cell "3" [ref=e115]
-                    - cell "TCS" [ref=e116]
-                    - cell "12345" [ref=e117]
-                    - cell "tcs@gmail.com" [ref=e118]
-                    - cell "India" [ref=e119]
-                    - cell [ref=e120]:
-                      - button [ref=e121]:
-                        - img [ref=e122]
-                  - row "675 RBAC Buyer 1 mm3o95rk rbac_buyer1_mm3o95rk@example.com" [ref=e126]:
-                    - cell "675" [ref=e127]
-                    - cell "RBAC Buyer 1 mm3o95rk" [ref=e128]
-                    - cell [ref=e129]
-                    - cell "rbac_buyer1_mm3o95rk@example.com" [ref=e130]
-                    - cell [ref=e131]
-                    - cell [ref=e132]:
-                      - button [ref=e133]:
-                        - img [ref=e134]
-                  - row "676 RBAC Buyer 2 mm3o95rk rbac_buyer2_mm3o95rk@example.com" [ref=e138]:
-                    - cell "676" [ref=e139]
-                    - cell "RBAC Buyer 2 mm3o95rk" [ref=e140]
-                    - cell [ref=e141]
-                    - cell "rbac_buyer2_mm3o95rk@example.com" [ref=e142]
-                    - cell [ref=e143]
-                    - cell [ref=e144]:
-                      - button [ref=e145]:
-                        - img [ref=e146]
-                  - row "1267 Test Buyer Org TEST01 test01@example.com US" [ref=e150]:
-                    - cell "1267" [ref=e151]
-                    - cell "Test Buyer Org" [ref=e152]
-                    - cell "TEST01" [ref=e153]
-                    - cell "test01@example.com" [ref=e154]
-                    - cell "US" [ref=e155]
-                    - cell [ref=e156]:
-                      - button [ref=e157]:
-                        - img [ref=e158]
-                  - row "7 HUL 123456 info@hul.com India" [ref=e162]:
-                    - cell "7" [ref=e163]
-                    - cell "HUL" [ref=e164]
-                    - cell "123456" [ref=e165]
-                    - cell "info@hul.com" [ref=e166]
-                    - cell "India" [ref=e167]
-                    - cell [ref=e168]:
-                      - button [ref=e169]:
-                        - img [ref=e170]
-                  - row "11 buyer11 buyer11-234567 buyer11@gmail.com India" [ref=e174]:
-                    - cell "11" [ref=e175]
-                    - cell "buyer11" [ref=e176]
-                    - cell "buyer11-234567" [ref=e177]
-                    - cell "buyer11@gmail.com" [ref=e178]
-                    - cell "India" [ref=e179]
-                    - cell [ref=e180]:
-                      - button [ref=e181]:
-                        - img [ref=e182]
-                  - row "1 buyer1 001 buyer1@gmail.com India" [ref=e186]:
-                    - cell "1" [ref=e187]
-                    - cell "buyer1" [ref=e188]
-                    - cell "001" [ref=e189]
-                    - cell "buyer1@gmail.com" [ref=e190]
-                    - cell "India" [ref=e191]
-                    - cell [ref=e192]:
-                      - button [ref=e193]:
-                        - img [ref=e194]
-                  - row "12 newBuyer 010 chndn.mishra@gmail.com United States" [ref=e198]:
-                    - cell "12" [ref=e199]
-                    - cell "newBuyer" [ref=e200]
-                    - cell "010" [ref=e201]
-                    - cell "chndn.mishra@gmail.com" [ref=e202]
-                    - cell "United States" [ref=e203]
-                    - cell [ref=e204]:
-                      - button [ref=e205]:
-                        - img [ref=e206]
-                  - row "13 sdntestbuyer 015 info1@sdntechsolutions.com India" [ref=e210]:
-                    - cell "13" [ref=e211]
-                    - cell "sdntestbuyer" [ref=e212]
-                    - cell "015" [ref=e213]
-                    - cell "info1@sdntechsolutions.com" [ref=e214]
-                    - cell "India" [ref=e215]
-                    - cell [ref=e216]:
-                      - button [ref=e217]:
-                        - img [ref=e218]
-              - generic [ref=e222]:
-                - paragraph [ref=e223]: Showing 1–10 of 1331 buyers
-                - generic [ref=e224]:
+          - generic [ref=e85]:
+            - generic [ref=e87]:
+              - heading "All Buyers" [level=3] [ref=e88]
+              - generic [ref=e89]:
+                - searchbox "Search buyers..." [ref=e90]
+                - button [ref=e91]:
+                  - img [ref=e92]
+            - generic [ref=e95]:
+              - table [ref=e97]:
+                - rowgroup [ref=e98]:
+                  - row "ID Name Code Email Country Actions" [ref=e99]:
+                    - columnheader "ID" [ref=e100]
+                    - columnheader "Name" [ref=e101]
+                    - columnheader "Code" [ref=e102]
+                    - columnheader "Email" [ref=e103]
+                    - columnheader "Country" [ref=e104]
+                    - columnheader "Actions" [ref=e105]
+                - rowgroup [ref=e106]:
+                  - row "2 sdntech 002 info@sdntechsolutions.com India" [ref=e107]:
+                    - cell "2" [ref=e108]
+                    - cell "sdntech" [ref=e109]
+                    - cell "002" [ref=e110]
+                    - cell "info@sdntechsolutions.com" [ref=e111]
+                    - cell "India" [ref=e112]
+                    - cell [ref=e113]:
+                      - button [ref=e114]:
+                        - img [ref=e115]
+                  - row "3 TCS 12345 tcs@gmail.com India" [ref=e119]:
+                    - cell "3" [ref=e120]
+                    - cell "TCS" [ref=e121]
+                    - cell "12345" [ref=e122]
+                    - cell "tcs@gmail.com" [ref=e123]
+                    - cell "India" [ref=e124]
+                    - cell [ref=e125]:
+                      - button [ref=e126]:
+                        - img [ref=e127]
+                  - row "675 RBAC Buyer 1 mm3o95rk rbac_buyer1_mm3o95rk@example.com" [ref=e131]:
+                    - cell "675" [ref=e132]
+                    - cell "RBAC Buyer 1 mm3o95rk" [ref=e133]
+                    - cell [ref=e134]
+                    - cell "rbac_buyer1_mm3o95rk@example.com" [ref=e135]
+                    - cell [ref=e136]
+                    - cell [ref=e137]:
+                      - button [ref=e138]:
+                        - img [ref=e139]
+                  - row "676 RBAC Buyer 2 mm3o95rk rbac_buyer2_mm3o95rk@example.com" [ref=e143]:
+                    - cell "676" [ref=e144]
+                    - cell "RBAC Buyer 2 mm3o95rk" [ref=e145]
+                    - cell [ref=e146]
+                    - cell "rbac_buyer2_mm3o95rk@example.com" [ref=e147]
+                    - cell [ref=e148]
+                    - cell [ref=e149]:
+                      - button [ref=e150]:
+                        - img [ref=e151]
+                  - row "1267 Test Buyer Org TEST01 test01@example.com US" [ref=e155]:
+                    - cell "1267" [ref=e156]
+                    - cell "Test Buyer Org" [ref=e157]
+                    - cell "TEST01" [ref=e158]
+                    - cell "test01@example.com" [ref=e159]
+                    - cell "US" [ref=e160]
+                    - cell [ref=e161]:
+                      - button [ref=e162]:
+                        - img [ref=e163]
+                  - row "7 HUL 123456 info@hul.com India" [ref=e167]:
+                    - cell "7" [ref=e168]
+                    - cell "HUL" [ref=e169]
+                    - cell "123456" [ref=e170]
+                    - cell "info@hul.com" [ref=e171]
+                    - cell "India" [ref=e172]
+                    - cell [ref=e173]:
+                      - button [ref=e174]:
+                        - img [ref=e175]
+                  - row "11 buyer11 buyer11-234567 buyer11@gmail.com India" [ref=e179]:
+                    - cell "11" [ref=e180]
+                    - cell "buyer11" [ref=e181]
+                    - cell "buyer11-234567" [ref=e182]
+                    - cell "buyer11@gmail.com" [ref=e183]
+                    - cell "India" [ref=e184]
+                    - cell [ref=e185]:
+                      - button [ref=e186]:
+                        - img [ref=e187]
+                  - row "1 buyer1 001 buyer1@gmail.com India" [ref=e191]:
+                    - cell "1" [ref=e192]
+                    - cell "buyer1" [ref=e193]
+                    - cell "001" [ref=e194]
+                    - cell "buyer1@gmail.com" [ref=e195]
+                    - cell "India" [ref=e196]
+                    - cell [ref=e197]:
+                      - button [ref=e198]:
+                        - img [ref=e199]
+                  - row "12 newBuyer 010 chndn.mishra@gmail.com United States" [ref=e203]:
+                    - cell "12" [ref=e204]
+                    - cell "newBuyer" [ref=e205]
+                    - cell "010" [ref=e206]
+                    - cell "chndn.mishra@gmail.com" [ref=e207]
+                    - cell "United States" [ref=e208]
+                    - cell [ref=e209]:
+                      - button [ref=e210]:
+                        - img [ref=e211]
+                  - row "13 sdntestbuyer 015 info1@sdntechsolutions.com India" [ref=e215]:
+                    - cell "13" [ref=e216]
+                    - cell "sdntestbuyer" [ref=e217]
+                    - cell "015" [ref=e218]
+                    - cell "info1@sdntechsolutions.com" [ref=e219]
+                    - cell "India" [ref=e220]
+                    - cell [ref=e221]:
+                      - button [ref=e222]:
+                        - img [ref=e223]
+              - generic [ref=e227]:
+                - paragraph [ref=e228]: Showing 1–10 of 1380 buyers
+                - generic [ref=e229]:
                   - button "Previous" [disabled]:
                     - img
                     - text: Previous
-                  - generic [ref=e225]: Page 1 of 134
-                  - button "Next" [ref=e226]:
+                  - generic [ref=e230]: Page 1 of 138
+                  - button "Next" [ref=e231]:
                     - text: Next
-                    - img [ref=e227]
-        - generic [ref=e229]:
-          - generic "Drag to move" [ref=e230]:
-            - generic [ref=e231]: Admin Controls (Role)
-            - img [ref=e232]
-          - generic [ref=e239]:
-            - generic [ref=e240]: "Role:"
-            - combobox [ref=e241]:
+                    - img [ref=e232]
+        - generic [ref=e234]:
+          - generic "Drag to move" [ref=e235]:
+            - generic [ref=e236]: Admin Controls (Role)
+            - img [ref=e237]
+          - generic [ref=e244]:
+            - generic [ref=e245]: "Role:"
+            - combobox [ref=e246]:
               - option "Super Admin" [selected]
               - option "SEM"
               - option "AP / Finance"
               - option "Compliance"
-          - generic [ref=e242]:
+          - generic [ref=e247]:
             - text: "Create Admin: Yes"
             - text: "Create Supplier: Yes"
   - region "Notifications alt+T"
-  - button "Open Next.js Dev Tools" [ref=e248] [cursor=pointer]:
-    - img [ref=e249]
-  - alert [ref=e252]
+  - button "Open Next.js Dev Tools" [ref=e253] [cursor=pointer]:
+    - img [ref=e254]
+  - alert [ref=e257]
 ```

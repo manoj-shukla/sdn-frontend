@@ -34,3 +34,10 @@ tmp/
 temp/
 
 node_modules/
+playwright-report/
+test-results/
+playwright-videos/
+playwright-mcp/
+playwright-mcp-server/
+playwright-mcp-server-types/
+playwright-mcp-server-types/

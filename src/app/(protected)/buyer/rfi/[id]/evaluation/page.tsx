@@ -148,7 +148,7 @@ export default function BuyerRFIEvaluationPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center py-32">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
@@ -166,7 +166,7 @@ export default function BuyerRFIEvaluationPage() {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto p-4 bg-[#f8fafc] min-h-screen">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">

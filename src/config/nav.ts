@@ -62,7 +62,7 @@ export const navConfig: Record<string, NavConfigGroup> = {
             category: "OVERVIEW",
             items: [
                 { title: "Dashboard", href: "/buyer/dashboard", icon: LayoutDashboard },
-                { title: "My Tasks", href: "/buyer/tasks", icon: CheckSquare }, // Placeholder
+                { title: "My Tasks", href: "/buyer/tasks", icon: CheckSquare }, 
                 { title: "Notifications", href: "/buyer/notifications", icon: Bell }, // Placeholder
                 { title: "Messages", href: "/buyer/messages", icon: Send },
             ]
@@ -71,7 +71,7 @@ export const navConfig: Record<string, NavConfigGroup> = {
             category: "SUPPLIERS",
             items: [
                 { title: "Supplier Directory", href: "/buyer/suppliers", icon: Search },
-                { title: "Onboarding", href: "/buyer/onboarding", icon: UserPlus }, // Mapping existing or placeholder
+                { title: "Onboarding", href: "/buyer/onboarding", icon: UserPlus },
                 { title: "Risk & Compliance", href: "/buyer/compliance", icon: Shield },
                 { title: "Performance", href: "/buyer/performance", icon: TrendingUp },
                 { title: "Supplier Portal", href: "/buyer/portal", icon: Store },
@@ -80,9 +80,7 @@ export const navConfig: Record<string, NavConfigGroup> = {
         {
             category: "SOURCING",
             items: [
-                { title: "RFI Events", href: "/buyer/rfi", icon: ClipboardList },
-                { title: "RFI Templates", href: "/buyer/rfi/templates", icon: FileText },
-                { title: "Question Library", href: "/buyer/rfi/questions", icon: HelpCircle },
+                { title: "RFI Module", href: "/buyer/rfi", icon: ClipboardList },
                 { title: "RFQ / RFP", href: "/buyer/rfp", icon: FileText },
                 { title: "Auctions", href: "/buyer/auctions", icon: Zap },
                 { title: "Bid Analysis", href: "/buyer/bids", icon: BarChart },

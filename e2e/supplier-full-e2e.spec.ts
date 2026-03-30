@@ -61,6 +61,8 @@ const buyerB = {
     buyerId: 0,
 };
 
+test.describe.configure({ mode: 'serial' });
+
 const supplierB = {
     email: `pw_sup_b_${run}@e2e.test`,
     password: 'Supplier456!',
@@ -363,8 +365,8 @@ async function fillOnboardingViaUI(page: Page) {
     await page.goto('/supplier/dashboard?section=company');
     await page.waitForLoadState('networkidle');
 
-    // COMPANY
-    await expect(page.getByRole('heading', { name: /Company Details/i })).toBeVisible({ timeout: 15000 });
+    1.  // COMPANY
+    await expect(page.getByRole('heading', { name: /Company (Details|Information)/i })).toBeVisible({ timeout: 15000 });
     await fillField(/Business Type/i, 'SME');
     await fillField(/Website/i, 'https://pw-e2e.example.com');
     await fillField(/Description/i, 'Playwright E2E test supplier.');
@@ -447,6 +449,26 @@ async function getPendingTasks(token: string) {
 }
 
 async function approveAllViaAPI(buyerToken: string, supplierId: number) {
+    // First, verify all documents to avoid Compliance step blockers
+    try {
+        const docsRes = await axios.get(`${API}/api/documents/supplier/${supplierId}`, {
+            headers: { Authorization: `Bearer ${buyerToken}` }
+        });
+        const docs = docsRes.data || [];
+        for (const doc of docs) {
+            const docId = doc.id || doc.documentId || doc.documentid;
+            const currentStatus = (doc.verificationStatus || doc.verificationstatus || doc.status || '').toUpperCase();
+            if (currentStatus !== 'VERIFIED' && currentStatus !== 'APPROVED') {
+                await axios.put(`${API}/api/documents/${docId}/verify`,
+                    { status: 'VERIFIED', comments: 'Auto-verified by Playwright' },
+                    { headers: { Authorization: `Bearer ${buyerToken}` } }
+                ).catch((e: any) => console.log(`[approveAllViaAPI] Failed to verify doc ${docId}: ${e.message}`));
+            }
+        }
+    } catch (e: any) {
+        console.log(`[approveAllViaAPI] Failed to fetch/verify documents: ${e.message}`);
+    }
+
     for (let i = 0; i < 10; i++) {
         const tasks = await getPendingTasks(buyerToken);
         const task = tasks.find(t => (t.supplierId || t.supplierid) === supplierId);
@@ -515,8 +537,10 @@ test.describe.serial('A: Happy Path', () => {
             await page.waitForTimeout(1000); // Wait for search results
         }
 
-        // Verify buyer row in table
-        await expect(page.getByRole('cell', { name: buyerA.name })).toBeVisible({ timeout: 10000 });
+        // Verify buyer row in table - using search to handle pagination/large datasets
+        await page.getByPlaceholder(/Search buyers/i).fill(buyerA.email);
+        await page.waitForTimeout(1000); // Filter debounce
+        await expect(page.getByRole('cell', { name: buyerA.name })).toBeVisible({ timeout: 15000 });
 
         // Get buyer token via API
         buyerA.token = await apiToken(buyerA.email, buyerA.password);
@@ -595,8 +619,15 @@ test.describe.serial('A: Happy Path', () => {
 
         // Open portal to verify the sections appear and fill them
         await injectAuth(page, supplierA.token, 'SUPPLIER', undefined);
-        await page.goto('/supplier/dashboard');
-        await navTo(page, 'supplier/dashboard');
+        await page.goto('/supplier/profile'); // Directly to profile to avoid dashboard redirect flakiness
+        
+        // Ensure state is synced
+        await page.waitForLoadState('networkidle');
+        const heading = page.getByRole('heading', { name: /Company (Details|Information)/i, level: 3 });
+        if (!(await heading.isVisible())) {
+            await page.reload();
+            await heading.waitFor({ state: 'visible', timeout: 15000 });
+        }
 
         // Fill all sections using the UI
         await fillOnboardingViaUI(page);

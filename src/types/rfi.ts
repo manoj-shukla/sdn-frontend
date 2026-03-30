@@ -44,6 +44,17 @@ export interface RFIQuestion {
     capabilityTags?: string[];
     complianceTags?: string[];
     helpText?: string;
+    /**
+     * Importance weight used in the weighted scoring matrix (1–100).
+     * Higher weight means this question contributes more to the final supplier score.
+     * Default: 10
+     */
+    weight?: number;
+    /**
+     * Defines how a supplier's answer is converted to a 0–100 score for this question.
+     * If absent, the question is treated as unscored (excluded from weighted total).
+     */
+    scoringConfig?: QuestionScoringConfig;
     createdAt: string;
     updatedAt?: string;
     isDeleted?: boolean;
@@ -214,6 +225,44 @@ export interface RFIClarification {
     sentAt?: string;
 }
 
+// ---- Scoring ----
+
+/** Score rule for a single select/multi-select option */
+export interface ScoringOptionRule {
+    /** Matches RFIQuestionOption.value */
+    value: string;
+    /** Score awarded when this option is selected (0–100) */
+    score: number;
+}
+
+/** Score rule for a numeric range */
+export interface ScoringNumericRange {
+    min?: number;
+    max?: number;
+    /** Score awarded when the numeric answer falls in this range (0–100) */
+    score: number;
+}
+
+/**
+ * Per-question scoring configuration stored on the question.
+ * Determines how a supplier's answer is converted to a 0–100 score.
+ */
+export interface QuestionScoringConfig {
+    /** YES_NO: score when supplier answers Yes (default 100) */
+    yesScore?: number;
+    /** YES_NO: score when supplier answers No (default 0) */
+    noScore?: number;
+    /** SINGLE_SELECT / MULTI_SELECT: score per option value */
+    optionRules?: ScoringOptionRule[];
+    /** NUMERIC: range-based scoring rules (evaluated top-to-bottom, first match wins) */
+    numericRanges?: ScoringNumericRange[];
+    /**
+     * SHORT_TEXT / LONG_TEXT / ATTACHMENT / TABLE:
+     * maximum points an evaluator can award manually (default 100)
+     */
+    maxManualScore?: number;
+}
+
 // ---- Analytics ----
 
 export interface RFIEventAnalytics {
@@ -273,6 +322,8 @@ export interface CreateRFIQuestionPayload {
     capabilityTags?: string[];
     complianceTags?: string[];
     helpText?: string;
+    weight?: number;
+    scoringConfig?: QuestionScoringConfig;
 }
 
 export interface AddRFIInvitationPayload {

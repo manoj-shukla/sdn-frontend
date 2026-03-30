@@ -17,6 +17,8 @@ import {
 import { toast } from "sonner";
 import type { RFITemplate } from "@/types/rfi";
 import { cn } from "@/lib/utils";
+import { InviteSupplierDialog, type InviteEntry } from "@/components/buyer/invite-supplier-dialog";
+import { Mail } from "lucide-react";
 
 interface SupplierOption {
     supplierId: number;
@@ -49,7 +51,8 @@ export default function BuyerRFICreatePage() {
     const [suppliersLoading, setSuppliersLoading] = useState(false);
     const [supplierSearch, setSupplierSearch] = useState("");
     const [selectedSupplierIds, setSelectedSupplierIds] = useState<Set<number>>(new Set());
-    const [extraEmail, setExtraEmail] = useState("");
+    const [emailInvites, setEmailInvites] = useState<InviteEntry[]>([]);
+    const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -126,10 +129,15 @@ export default function BuyerRFICreatePage() {
             const rfiId = eventRes.rfiId || eventRes.id;
 
             // 2. Add invitations
-            if (selectedSupplierIds.size > 0 || extraEmail.trim()) {
-                const payload: { supplierIds?: number[]; emails?: string[] } = {};
+            if (selectedSupplierIds.size > 0 || emailInvites.length > 0) {
+                const payload: { supplierIds?: number[]; emailInvites?: any[] } = {};
                 if (selectedSupplierIds.size > 0) payload.supplierIds = [...selectedSupplierIds];
-                if (extraEmail.trim()) payload.emails = [extraEmail.trim()];
+                if (emailInvites.length > 0) {
+                    payload.emailInvites = emailInvites.map((inv) => ({
+                        email: inv.email,
+                        legalName: inv.legalName
+                    }));
+                }
                 await apiClient.post(`/api/rfi/events/${rfiId}/invitations`, payload);
             }
 
@@ -188,7 +196,7 @@ export default function BuyerRFICreatePage() {
     };
 
     return (
-        <div className="max-w-[1400px] mx-auto space-y-6 p-4 pb-16 bg-[#f8fafc] min-h-screen">
+        <div className="space-y-6 pb-12">
             {/* Header */}
             <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-100 rounded-lg">
@@ -429,20 +437,54 @@ export default function BuyerRFICreatePage() {
                             </p>
                         )}
 
-                        <div className="border-t pt-4 space-y-2">
-                            <Label>Invite by email</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    type="email"
-                                    placeholder="supplier@example.com"
-                                    value={extraEmail}
-                                    onChange={(e) => setExtraEmail(e.target.value)}
-                                    className="max-w-xs"
-                                />
+                        <div className="border-t pt-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <Label>Invite by email</Label>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsInviteDialogOpen(true)}
+                                >
+                                    <Plus className="h-4 w-4 mr-1" /> Invite New Supplier
+                                </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                An invitation link will be emailed to this address.
-                            </p>
+
+                            {emailInvites.length > 0 ? (
+                                <div className="border rounded-lg divide-y">
+                                    {emailInvites.map((inv, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center justify-between px-4 py-3"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                                    <Mail className="h-4 w-4 text-indigo-600" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="font-medium text-sm truncate">{inv.legalName}</div>
+                                                    <div className="text-xs text-muted-foreground truncate">
+                                                        {inv.email} · {inv.country} · {inv.supplierType}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500"
+                                                onClick={() =>
+                                                    setEmailInvites((prev) => prev.filter((_, i) => i !== idx))
+                                                }
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    No email invitations added yet. Click &quot;Invite New Supplier&quot; to add one.
+                                </p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -475,7 +517,7 @@ export default function BuyerRFICreatePage() {
                                 <span className="text-muted-foreground block mb-0.5">Suppliers invited</span>
                                 <span className="font-semibold">
                                     {selectedSupplierIds.size}
-                                    {extraEmail.trim() ? ` + 1 by email` : ""}
+                                    {emailInvites.length > 0 ? ` + ${emailInvites.length} by email` : ""}
                                 </span>
                             </div>
                         </div>
@@ -526,6 +568,21 @@ export default function BuyerRFICreatePage() {
                     )}
                 </div>
             </div>
+
+            {/* Invite Supplier Modal */}
+            <InviteSupplierDialog
+                isOpen={isInviteDialogOpen}
+                onClose={() => setIsInviteDialogOpen(false)}
+                onAdd={(invite) => {
+                    // Prevent duplicate emails
+                    if (emailInvites.some((e) => e.email.toLowerCase() === invite.email.toLowerCase())) {
+                        toast.error("This email has already been added.");
+                        return;
+                    }
+                    setEmailInvites((prev) => [...prev, invite]);
+                    toast.success(`${invite.legalName} added to invite list.`);
+                }}
+            />
         </div>
     );
 }

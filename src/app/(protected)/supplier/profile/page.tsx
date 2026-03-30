@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SupplierContactManagement } from "@/components/supplier/contact-management";
 import { SupplierAddressManagement } from "@/components/supplier/address-management";
 import { SupplierDocumentManagement } from "@/components/supplier/document-management";
@@ -152,16 +153,7 @@ export default function SupplierProfilePage() {
                 </div>
             )}
 
-            {/* {showPendingAlert && (
-                <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md text-sm mb-4">
-                    <strong>Pending Changes:</strong> You have submitted changes that are waiting for approval.
-                    <ul className="list-disc ml-5 mt-1">
-                        {filteredPendingItems.map((item: any, idx: number) => (
-                            <li key={idx}>{item.fieldName}: {item.oldValue} &rarr; {item.newValue}</li>
-                        ))}
-                    </ul>
-                </div>
-            )} */}
+
 
             <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-5 mb-6">
@@ -175,7 +167,43 @@ export default function SupplierProfilePage() {
                 <TabsContent value="overview">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Company Information</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Company Information</CardTitle>
+                                {showPendingAlert && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                                                <Info className="h-4 w-4" />
+                                                <span className="sr-only">View Pending Changes</span>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent side="left" align="start" className="w-80">
+                                            <div className="space-y-2">
+                                                <h4 className="font-medium text-sm leading-none">Pending Approval</h4>
+                                                <p className="text-xs text-muted-foreground">
+                                                    You have submitted these changes for review.
+                                                </p>
+                                                <div className="mt-4 border-t pt-2">
+                                                    <ul className="text-xs space-y-1.5 mt-2">
+                                                        {filteredPendingItems.map((item: any, idx: number) => (
+                                                            <li key={idx} className="flex flex-col gap-0.5 border-b border-gray-50 pb-1 last:border-0">
+                                                                <span className="font-semibold text-gray-700 capitalize">{item.fieldName}</span>
+                                                                <span className="text-gray-500 italic flex items-center gap-1">
+                                                                    {typeof item.oldValue === 'object' ? 'Previous' : String(item.oldValue || 'None')} 
+                                                                    <span className="text-[10px] text-blue-400">&rarr;</span>
+                                                                    <span className="text-blue-700 font-medium">
+                                                                        {typeof item.newValue === 'object' ? 'Updated' : String(item.newValue)}
+                                                                    </span>
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
+                            </div>
                             <CardDescription>
                                 Provide your official company details.
                             </CardDescription>

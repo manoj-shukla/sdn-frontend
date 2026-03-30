@@ -161,10 +161,12 @@ test.describe('Supplier Change Requests E2E', () => {
             await descriptionInput.fill('An updated description for testing.');
             await page.getByRole('button', { name: /save changes/i }).click();
 
-            // Instead of a brittle timeout, wait for the UI to show the "Pending Changes" alert
-            // This confirms the backend successfully processed the update and created a Change Request.
-            await expect(page.getByText(/Pending Changes:/i)).toBeVisible({ timeout: 15000 });
-            console.log('--- Profile save triggered and confirmed in UI ✓ ---');
+            // With the new UI, we look for the subtle Info icon button and click it to see the details
+            const pendingBtn = page.getByRole('button', { name: /view pending changes/i });
+            await expect(pendingBtn).toBeVisible({ timeout: 15000 });
+            await pendingBtn.click();
+            await expect(page.getByRole('dialog').getByText(/Pending Approval/i)).toBeVisible({ timeout: 5000 });
+            console.log('--- Profile save triggered and confirmed in Popover UI ✓ ---');
         } else {
             console.log('--- Description field disabled (role restriction) — skipping save step ---');
         }
@@ -183,6 +185,8 @@ test.describe('Supplier Change Requests E2E', () => {
         await taskRow.click(); // Expand the task drawer/modal
 
         // Verify that the requested changes are listed inside the payload
+        // We look for labels created by the TasksPage LABEL_MAP
+        await expect(page.getByText(/Address Line 1/i)).toBeVisible();
         await expect(page.getByText(/456 Update Ave/i)).toBeVisible();
         await expect(page.getByText(/First National Bank/i)).toBeVisible();
 

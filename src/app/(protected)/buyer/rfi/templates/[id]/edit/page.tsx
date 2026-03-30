@@ -31,7 +31,7 @@ export default function BuyerRFITemplateEditPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center py-32">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
@@ -39,7 +39,7 @@ export default function BuyerRFITemplateEditPage() {
 
     if (!template) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center py-32">
                 <p className="text-muted-foreground">Template not found.</p>
             </div>
         );

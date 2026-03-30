@@ -52,8 +52,9 @@ export function SupplierRoleProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.supplierId]);
 
-    // "Approved" status no longer locks fields; it triggers Change Request flow on backend.
-    const isCriticalFieldReadOnly = (role === "User");
+    // Status-based Locking: Fields are locked ONLY during active review or for restricted 'User' role.
+    const isActiveReview = ['SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
+    const isCriticalFieldReadOnly = (role === "User") || isActiveReview;
     const canSubmit = role === "Admin" && status !== "APPROVED";
     const canManageUsers = role === "Admin";
 

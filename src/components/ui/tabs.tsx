@@ -4,16 +4,6 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-// Note: I would need to install @radix-ui/react-tabs. 
-// Step to install it will be added. 
-// For now, I will create a simple custom implementation to avoid extra dependencies if I can, 
-// BUT to be "Production Ready" I should use Radix.
-// I'll stick to simple custom React state for tabs to keep it dependency-free for this speedrun 
-// unless I've already installed radix (I haven't).
-// Wait, prompt said "Production-grade". Radix is production grade.
-// But I need to run `npm install @radix-ui/react-tabs`.
-// I will just build a custom one using standard React to avoid the install step latency, it's fairly simple.
-
 interface TabsProps {
     defaultValue?: string;
     value?: string;
@@ -53,7 +43,7 @@ export function TabsList({ className, children }: { className?: string, children
         <div
             role="tablist"
             className={cn(
-                "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+                "inline-flex h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
                 className
             )}
         >
@@ -72,8 +62,9 @@ export function TabsTrigger({ value, className, children, ...props }: { value: s
         <button
             role="tab"
             aria-selected={isActive}
+            data-state={isActive ? "active" : "inactive"}
             className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
                 isActive && "bg-background text-foreground shadow-sm",
                 className
             )}

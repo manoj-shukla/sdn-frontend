@@ -19,7 +19,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { LogOut, User, FileText, LayoutDashboard, ClipboardCheck, Send, MapPin, Users, CreditCard, KeyRound, Loader2, Pin, PinOff, PanelLeftClose, PanelLeftOpen, ChevronLeft } from "lucide-react";
+import {
+    LogOut, User, FileText, LayoutDashboard, ClipboardCheck,
+    Send, MapPin, Users, CreditCard, KeyRound, Loader2,
+    PanelLeftClose, PanelLeftOpen
+} from "lucide-react";
 import apiClient from "@/lib/api/client";
 
 import { useEffect, useState } from "react";
@@ -37,77 +41,102 @@ export function Sidebar() {
     const [changingPassword, setChangingPassword] = useState(false);
     const [changeError, setChangeError] = useState<string | null>(null);
     const [changeSuccess, setChangeSuccess] = useState(false);
+    // isPinned = true means sidebar is pinned in COLLAPSED (icon-only) mode on desktop
     const [isPinned, setIsPinned] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [onboardingCount, setOnboardingCount] = useState(0);
+    const [activeRfiCount, setActiveRfiCount] = useState(0);
 
-    // Always call hook, provider is guaranteed by ProtectedLayout now
-    const { role: contextRole, canViewApprovals } = useBuyerRole();
-
+    const { role: contextRole } = useBuyerRole();
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-        const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        const mobile = typeof window !== "undefined" && window.innerWidth < 768;
         setIsMobile(mobile);
 
-        // Load pin state from localStorage, default to true (pinned) on desktop
-        const savedPin = localStorage.getItem('sidebar-pinned');
+        const savedPin = localStorage.getItem("sidebar-pinned");
         if (savedPin !== null) {
-            setIsPinned(savedPin === 'true');
+            setIsPinned(savedPin === "true");
         } else {
-            setIsPinned(!mobile);
+            setIsPinned(false);
         }
 
         const handleResize = () => {
             const newMobile = window.innerWidth < 768;
             setIsMobile((prevMobile) => {
-                // Reset pin to default when switching to/from mobile
                 if (newMobile !== prevMobile) {
-                    localStorage.setItem('sidebar-pinned', (!newMobile).toString());
-                    setIsPinned(!newMobile);
+                    setIsPinned(false);
+                    localStorage.setItem("sidebar-pinned", "false");
                 }
                 return newMobile;
             });
         };
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Persist pin state to localStorage
     useEffect(() => {
         if (isMounted) {
-            localStorage.setItem('sidebar-pinned', isPinned.toString());
+            localStorage.setItem("sidebar-pinned", isPinned.toString());
         }
     }, [isPinned, isMounted]);
 
-    // Prevent hydration mismatch
+    useEffect(() => {
+        const fetchCounts = async () => {
+            if (!user || user.role.toUpperCase() !== "BUYER") return;
+            try {
+                const [onboardingRes, rfiRes] = await Promise.allSettled([
+                    apiClient.get('/api/approvals/count'),
+                    apiClient.get('/api/rfi/events/active-count')
+                ]);
+
+                if (onboardingRes.status === 'fulfilled') {
+                    setOnboardingCount((onboardingRes.value as any).data?.count || 0);
+                }
+                if (rfiRes.status === 'fulfilled') {
+                    setActiveRfiCount((rfiRes.value as any).data?.count || 0);
+                }
+            } catch (error) {
+                console.error("Failed to fetch sidebar counts:", error);
+            }
+        };
+
+        if (isMounted && user) {
+            fetchCounts();
+        }
+    }, [isMounted, user, pathname]);
+
     if (!isMounted) {
-        return <div className="flex h-screen w-64 flex-col border-r bg-card animate-pulse" />;
+        return (
+            <div
+                className="flex h-screen w-16 flex-col border-r animate-pulse shrink-0"
+                style={{ background: "linear-gradient(180deg, #0d1433 0%, #0f2060 50%, #132d8a 100%)" }}
+            />
+        );
     }
 
-    // Determine sidebar state
-    const showFull = !isMobile && (isPinned || isHovered);
-    const sidebarWidth = isMobile || (!showFull && !isHovered) ? 'w-16' : 'w-64';
+    // Sidebar logic:
+    // Mobile: always icon-only (w-16), no text, no pin button
+    // Desktop + isPinned: icon-only unless hovered → then expands to full
+    // Desktop + !isPinned: full sidebar (w-64)
+    const isIconOnly = isMobile || isPinned;
+    const showFull = !isIconOnly || (isPinned && isHovered);
 
     if (!user) return null;
 
-    // Case-insensitive lookup for role (buyer -> BUYER)
-    const roleKey = Object.keys(navConfig).find(key => key.toUpperCase() === user.role.toUpperCase());
+    const roleKey = Object.keys(navConfig).find(
+        (key) => key.toUpperCase() === user.role.toUpperCase()
+    );
     const allItems = roleKey ? navConfig[roleKey] : [];
-
-    // Filter by SubRole if defined
-    // Prioritize the context role (simulated) over the token role
     const userSubRole = contextRole || (user as any).subRole || "User";
 
-    // Dynamic Items Logic
     let displayItems = allItems;
 
-    // Restriction for Unapproved Suppliers
-    if (roleKey === 'SUPPLIER') {
+    if (roleKey === "SUPPLIER") {
         const status = user.approvalStatus;
-        if (status !== 'APPROVED') {
-            // ... (keep supplier logic)
+        if (status !== "APPROVED") {
             displayItems = [
                 { title: "Dashboard", href: "/supplier/dashboard?section=dashboard", icon: LayoutDashboard },
                 { title: "Company Details", href: "/supplier/dashboard?section=company", icon: User },
@@ -121,10 +150,9 @@ export function Sidebar() {
         }
     }
 
-    // Filtering updated for Categorized structure
     const items = displayItems.reduce<(NavItem | NavCategory)[]>((acc, item) => {
-        if ('category' in item) {
-            const filteredSubItems = item.items.filter(subItem => {
+        if ("category" in item) {
+            const filteredSubItems = item.items.filter((subItem) => {
                 if (!subItem.allowedSubRoles) return true;
                 return subItem.allowedSubRoles.includes(userSubRole);
             });
@@ -140,13 +168,15 @@ export function Sidebar() {
     }, []);
 
     const activeItem = items
-        .flatMap(entry => 'category' in entry ? entry.items : [entry])
-        .filter(item => pathname === item.href || pathname.startsWith(item.href + '/'))
+        .flatMap((entry) => ("category" in entry ? entry.items : [entry]))
+        .filter(
+            (item) =>
+                pathname === item.href || pathname.startsWith(item.href + "/")
+        )
         .sort((a, b) => b.href.length - a.href.length)[0];
 
     const handleChangePassword = async () => {
         setChangeError(null);
-
         if (!currentPassword || !newPassword || !confirmPassword) {
             setChangeError("All fields are required");
             return;
@@ -159,13 +189,9 @@ export function Sidebar() {
             setChangeError("New passwords don't match");
             return;
         }
-
         setChangingPassword(true);
         try {
-            await apiClient.post('/auth/change-password', {
-                currentPassword,
-                newPassword,
-            });
+            await apiClient.post("/auth/change-password", { currentPassword, newPassword });
             setChangeSuccess(true);
             setCurrentPassword("");
             setNewPassword("");
@@ -186,168 +212,239 @@ export function Sidebar() {
         setChangeSuccess(false);
     };
 
-    return (
-        <div
-            className={`flex h-screen ${sidebarWidth} flex-col border-r bg-[#0a192f] text-slate-300 transition-all duration-300 ease-in-out group ${!isMobile ? 'hover:w-64' : ''}`}
-            onMouseEnter={() => !isMobile && !isPinned && setIsHovered(true)}
-            onMouseLeave={() => !isMobile && setIsHovered(false)}
+    const sidebarBg = "linear-gradient(180deg, #0d1433 0%, #0f2060 60%, #132d8a 100%)";
+
+    // user.username is the display name field (User type has username, not name)
+    const displayName = user.username || user.email || "User";
+    const userInitials = displayName
+        .split(/[\s@]/)
+        .filter(Boolean)
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+    // NavLink renders a navigation item with optional native tooltip when collapsed
+    const NavLink = ({
+        icon: Icon,
+        title,
+        href,
+        isActive,
+        badge,
+    }: {
+        icon: React.ElementType;
+        title: string;
+        href: string;
+        isActive: boolean;
+        badge?: number;
+    }) => (
+        <Link
+            href={href}
+            title={!showFull ? title : undefined}
+            className={cn(
+                "group flex items-center rounded-xl transition-all duration-200 relative",
+                showFull ? "gap-3 px-3 py-2.5 w-full" : "justify-center p-2.5 w-10 h-10",
+                isActive
+                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
+                    : "text-white/65 hover:bg-white/10 hover:text-white"
+            )}
         >
-            {/* Header / Logo */}
-            <div className={`flex h-16 items-center border-b border-slate-800/50 ${showFull ? 'px-6 gap-3' : 'px-3 justify-center'}`}>
-                <div className="relative flex h-9 w-9 items-center justify-center shrink-0">
-                    <div className="absolute inset-0 bg-blue-600 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.4)]" />
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-5 w-5 relative">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                        <line x1="12" y1="22.08" x2="12" y2="12" />
-                    </svg>
-                </div>
-                {showFull && (
-                    <div className="flex flex-col leading-tight flex-1">
-                        <span className="text-lg font-bold tracking-tight text-white">SDN Tech</span>
-                        <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase">Procurement Platform</span>
+            <Icon
+                className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    isActive ? "text-white" : "text-white/65 group-hover:text-white"
+                )}
+            />
+            {showFull && (
+                <span className="flex-1 text-sm font-medium truncate">{title}</span>
+            )}
+            {showFull && badge !== undefined && badge > 0 && (
+                <span className="flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {badge}
+                </span>
+            )}
+            {!showFull && badge !== undefined && badge > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white border border-[#0d1433]">
+                    {badge > 9 ? "9+" : badge}
+                </span>
+            )}
+        </Link>
+    );
+
+    return (
+        <>
+            <div
+                className={cn(
+                    "flex h-screen flex-col border-r border-white/10 transition-all duration-300 ease-in-out overflow-hidden shrink-0",
+                    showFull ? "w-64" : "w-16"
+                )}
+                style={{ background: sidebarBg }}
+                onMouseEnter={() => !isMobile && isPinned && setIsHovered(true)}
+                onMouseLeave={() => { if (!isMobile && isPinned) setIsHovered(false); }}
+            >
+                {/* ── Header ── */}
+                <div
+                    className={cn(
+                        "flex h-16 items-center border-b border-white/10 shrink-0",
+                        showFull ? "px-4 gap-3" : "justify-center px-0"
+                    )}
+                >
+                    <div className="relative flex h-9 w-9 items-center justify-center shrink-0">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/30" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="h-5 w-5 relative">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                            <line x1="12" y1="22.08" x2="12" y2="12" />
+                        </svg>
                     </div>
-                )}
-                {!isMobile && (
-                    <button
-                        onClick={() => setIsPinned(!isPinned)}
-                        className={`p-1.5 rounded-lg transition-all shrink-0 ${
-                            isPinned
-                                ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
-                                : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
-                        }`}
-                        title={isPinned ? 'Unpin sidebar (collapse)' : 'Pin sidebar (expand)'}
-                    >
-                        {isPinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
-                    </button>
-                )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
-
-                {/* Buyer AI Assistant Card (Top of Buyer sidebar) */}
-                {user.role.toUpperCase() === 'BUYER' && (
-                    <div className={`mb-6 ${showFull ? 'px-4' : 'px-2'}`}>
-                        <div className={`bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-xl border border-blue-500/20 flex items-center cursor-pointer hover:from-blue-600/30 hover:to-indigo-600/30 transition-all ${showFull ? 'p-3 gap-3' : 'p-2 justify-center'}`}>
-                            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg text-lg shrink-0">
-                                🤖
-                            </div>
-                            {showFull && (
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-blue-400">SDN Assistant</span>
-                                    <span className="text-[10px] text-slate-500">Ask me anything...</span>
-                                </div>
-                            )}
+                    {showFull && (
+                        <div className="flex flex-col leading-tight flex-1 min-w-0">
+                            <span className="text-base font-bold tracking-tight text-white truncate">SDN Tech</span>
+                            <span className="text-[9px] font-semibold text-blue-300/70 tracking-wider uppercase">
+                                Procurement Platform
+                            </span>
                         </div>
-                    </div>
-                )}
+                    )}
+                    {/* Pin/Unpin — desktop only, shows when sidebar is expanded */}
+                    {!isMobile && showFull && (
+                        <button
+                            onClick={() => setIsPinned(!isPinned)}
+                            title={isPinned ? "Unpin (keep expanded)" : "Pin to icon-only mode"}
+                            className={cn(
+                                "p-1.5 rounded-lg transition-all shrink-0",
+                                isPinned
+                                    ? "bg-white/20 text-white hover:bg-white/30"
+                                    : "text-white/50 hover:bg-white/10 hover:text-white"
+                            )}
+                        >
+                            {isPinned ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                        </button>
+                    )}
+                </div>
 
-                <nav className={`space-y-6 ${showFull ? 'px-4' : 'px-2'}`}>
-                    {items.map((entry: NavItem | NavCategory, entryIdx: number) => {
-                        if ('category' in entry) {
-                            return (
-                                <div key={entryIdx} className="space-y-1">
-                                    {showFull && (
-                                        <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">
-                                            {entry.category}
-                                        </h3>
-                                    )}
-                                    <div className="space-y-0.5">
-                                        {entry.items.map((item, itemIdx) => {
-                                            const isActive = activeItem?.href === item.href;
-                                            return (
-                                                <Link
-                                                    key={itemIdx}
-                                                    href={item.href}
-                                                    className={cn(
-                                                        "group flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200",
-                                                        showFull ? "gap-3" : "justify-center",
-                                                        isActive
-                                                            ? "bg-blue-600/10 text-blue-400 shadow-[inset_0_0_10px_rgba(37,99,235,0.1)] border border-blue-500/20"
-                                                            : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                                                    )}
-                                                >
-                                                    <item.icon className={cn(
-                                                        "h-4 w-4 transition-colors shrink-0",
-                                                        isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"
-                                                    )} />
-                                                    {showFull && (
-                                                        <span className="flex-1">{item.title}</span>
-                                                    )}
-                                                    {showFull && item.badgeCount !== undefined && (
-                                                        <span className="flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]">
-                                                            {item.badgeCount}
-                                                        </span>
-                                                    )}
-                                                    {showFull && item.title === 'Messages' && messagesCount > 0 && (
-                                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-                                                            {messagesCount}
-                                                        </span>
-                                                    )}
-                                                    {showFull && item.title === 'Notifications' && notificationsCount > 0 && (
-                                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]">
-                                                            {notificationsCount}
-                                                        </span>
-                                                    )}
-                                                </Link>
-                                            );
-                                        })}
+                {/* ── User Profile ── */}
+                <div
+                    className={cn(
+                        "flex items-center border-b border-white/10 shrink-0",
+                        showFull ? "px-4 py-3 gap-3" : "py-3 justify-center"
+                    )}
+                >
+                    <div
+                        className="relative shrink-0 cursor-default"
+                        title={!showFull ? `${displayName} · ${user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}` : undefined}
+                    >
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                            {userInitials}
+                        </div>
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-[#0d1433]" />
+                    </div>
+                    {showFull && (
+                        <div className="flex flex-col leading-tight min-w-0">
+                            <span className="text-sm font-semibold text-white truncate">{displayName}</span>
+                            <span className="text-[10px] text-blue-300/70 capitalize">
+                                {user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Navigation ── */}
+                <div className="flex-1 overflow-y-auto py-3 scrollbar-hide">
+                    <nav className={cn("space-y-4", showFull ? "px-3" : "px-2")}>
+                        {items.map((entry: NavItem | NavCategory, entryIdx: number) => {
+                            if ("category" in entry) {
+                                return (
+                                    <div key={entryIdx} className="space-y-0.5">
+                                        {showFull && (
+                                            <h3 className="px-3 text-[9px] font-bold text-blue-300/50 uppercase tracking-[0.2em] mb-2">
+                                                {entry.category}
+                                            </h3>
+                                        )}
+                                        {!showFull && entryIdx > 0 && (
+                                            <div className="border-t border-white/10 my-2 mx-1" />
+                                        )}
+                                        <div className={cn("space-y-0.5", !showFull && "flex flex-col items-center")}>
+                                            {entry.items.map((item, itemIdx) => {
+                                                const isActive = activeItem?.href === item.href;
+                                                const badge =
+                                                    item.badgeCount !== undefined
+                                                        ? item.badgeCount
+                                                        : item.title === "Messages"
+                                                        ? messagesCount
+                                                        : item.title === "Notifications"
+                                                        ? notificationsCount
+                                                        : item.title === "Onboarding"
+                                                        ? onboardingCount
+                                                        : item.title === "RFI Events"
+                                                        ? activeRfiCount
+                                                        : undefined;
+                                                return (
+                                                    <NavLink
+                                                        key={itemIdx}
+                                                        icon={item.icon}
+                                                        title={item.title}
+                                                        href={item.href}
+                                                        isActive={isActive}
+                                                        badge={badge}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
                                     </div>
+                                );
+                            }
+
+                            const isActive = activeItem?.href === entry.href;
+                            return (
+                                <div key={entryIdx} className={cn(!showFull && "flex justify-center")}>
+                                    <NavLink
+                                        icon={entry.icon}
+                                        title={entry.title}
+                                        href={entry.href}
+                                        isActive={isActive}
+                                    />
                                 </div>
                             );
-                        }
+                        })}
+                    </nav>
+                </div>
 
-                        // Fallback for flat items (Admin)
-                        const isActive = activeItem?.href === entry.href;
-                        return (
-                            <Link
-                                key={entryIdx}
-                                href={entry.href}
-                                className={cn(
-                                    "group flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200",
-                                    showFull ? "gap-3" : "justify-center",
-                                    isActive
-                                        ? "bg-blue-600/10 text-blue-400 border border-blue-500/20"
-                                        : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                                )}
-                            >
-                                <entry.icon className={cn(
-                                    "h-4 w-4 transition-colors shrink-0",
-                                    isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"
-                                )} />
-                                {showFull && <span className="flex-1">{entry.title}</span>}
-                            </Link>
-                        );
-                    })}
-                </nav>
-            </div>
-            <div className={`border-t space-y-2 ${showFull ? 'p-4' : 'p-2'}`}>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`group w-full rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all duration-200 ${showFull ? 'justify-start gap-3' : 'justify-center'}`}
-                    onClick={() => setIsChangePasswordOpen(true)}
-                    title={showFull ? '' : 'Change Password'}
+                {/* ── Footer ── */}
+                <div
+                    className={cn(
+                        "border-t border-white/10 py-2 space-y-0.5 shrink-0",
+                        showFull ? "px-3" : "px-2"
+                    )}
                 >
-                    <KeyRound className="h-4 w-4 text-slate-500 group-hover:text-slate-300 shrink-0" />
-                    {showFull && <span>Change Password</span>}
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`group w-full rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all duration-200 ${showFull ? 'justify-start gap-3' : 'justify-center'}`}
-                    onClick={() => {
-                        logout();
-                        // Clear cookies on logout
-                        document.cookie = "token=; path=/; max-age=0";
-                        document.cookie = "role=; path=/; max-age=0";
-                        window.location.href = "/auth/login";
-                    }}
-                    title={showFull ? '' : 'Logout'}
-                >
-                    <LogOut className="h-4 w-4 text-slate-500 group-hover:text-slate-300 shrink-0" />
-                    {showFull && <span>Logout</span>}
-                </Button>
+                    <button
+                        title={!showFull ? "Change Password" : undefined}
+                        className={cn(
+                            "group flex items-center rounded-xl w-full transition-all duration-200 text-white/55 hover:bg-white/10 hover:text-white",
+                            showFull ? "gap-3 px-3 py-2.5" : "justify-center p-2.5"
+                        )}
+                        onClick={() => setIsChangePasswordOpen(true)}
+                    >
+                        <KeyRound className="h-4 w-4 shrink-0 transition-colors group-hover:text-white" />
+                        {showFull && <span className="text-sm font-medium">Change Password</span>}
+                    </button>
+
+                    <button
+                        title={!showFull ? "Logout" : undefined}
+                        className={cn(
+                            "group flex items-center rounded-xl w-full transition-all duration-200 text-white/55 hover:bg-red-500/20 hover:text-red-400",
+                            showFull ? "gap-3 px-3 py-2.5" : "justify-center p-2.5"
+                        )}
+                        onClick={() => {
+                            logout();
+                            document.cookie = "token=; path=/; max-age=0";
+                            document.cookie = "role=; path=/; max-age=0";
+                            window.location.href = "/auth/login";
+                        }}
+                    >
+                        <LogOut className="h-4 w-4 shrink-0 transition-colors" />
+                        {showFull && <span className="text-sm font-medium">Logout</span>}
+                    </button>
+                </div>
             </div>
 
             {/* Change Password Dialog */}
@@ -374,9 +471,9 @@ export function Sidebar() {
                     ) : (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="currentPassword">Current Password</Label>
+                                <Label htmlFor="cpCurrentPassword">Current Password</Label>
                                 <Input
-                                    id="currentPassword"
+                                    id="cpCurrentPassword"
                                     type="password"
                                     placeholder="Enter current password"
                                     value={currentPassword}
@@ -385,9 +482,9 @@ export function Sidebar() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="newPassword">New Password</Label>
+                                <Label htmlFor="cpNewPassword">New Password</Label>
                                 <Input
-                                    id="newPassword"
+                                    id="cpNewPassword"
                                     type="password"
                                     placeholder="Enter new password"
                                     value={newPassword}
@@ -396,9 +493,9 @@ export function Sidebar() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                                <Label htmlFor="cpConfirmPassword">Confirm New Password</Label>
                                 <Input
-                                    id="confirmNewPassword"
+                                    id="cpConfirmPassword"
                                     type="password"
                                     placeholder="Confirm new password"
                                     value={confirmPassword}
@@ -406,13 +503,15 @@ export function Sidebar() {
                                     disabled={changingPassword}
                                 />
                             </div>
-                            {changeError && <p className="text-sm font-medium text-destructive">{changeError}</p>}
+                            {changeError && (
+                                <p className="text-sm font-medium text-destructive">{changeError}</p>
+                            )}
                         </div>
                     )}
 
                     <DialogFooter>
                         <Button variant="outline" onClick={closeChangePasswordDialog}>
-                            {changeSuccess ? 'Close' : 'Cancel'}
+                            {changeSuccess ? "Close" : "Cancel"}
                         </Button>
                         {!changeSuccess && (
                             <Button onClick={handleChangePassword} disabled={changingPassword}>
@@ -423,6 +522,6 @@ export function Sidebar() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </>
     );
 }
