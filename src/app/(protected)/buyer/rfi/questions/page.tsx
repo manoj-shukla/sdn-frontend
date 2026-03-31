@@ -281,7 +281,7 @@ export default function BuyerRFIQuestionsPage() {
         if (isAdmin) return true;
         return !isGlobal(q);
     };
-    const canDelete = (q: RFIQuestion) => isAdmin;
+    const canDelete = (q: RFIQuestion) => isAdmin || !isGlobal(q);
 
     const fetchQuestions = async () => {
         try {
@@ -467,9 +467,9 @@ export default function BuyerRFIQuestionsPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <HelpCircle className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold text-slate-900">Question Library</h2>
+                    <h2 data-testid="question-library-heading" className="text-lg font-semibold text-slate-900">Question Library</h2>
                 </div>
-                <Button onClick={openCreate} className="gap-2">
+                <Button data-testid="add-question-btn" onClick={openCreate} className="gap-2">
                     <Plus className="h-4 w-4" />
                     Add Question
                 </Button>
@@ -499,7 +499,7 @@ export default function BuyerRFIQuestionsPage() {
                     </SelectContent>
                 </Select>
                 <Select value={tagFilter} onValueChange={setTagFilter}>
-                    <SelectTrigger className="w-44">
+                    <SelectTrigger data-testid="category-filter" className="w-44">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -520,7 +520,7 @@ export default function BuyerRFIQuestionsPage() {
                     {paginated.map((q, idx) => {
                         const globalIdx = (page - 1) * PAGE_SIZE + idx;
                         return (
-                        <Card key={q.questionId} className="hover:border-primary/30 transition-colors">
+                        <Card key={q.questionId} data-testid={`question-row-${q.questionId}`} className="hover:border-primary/30 transition-colors">
                             <CardContent className="p-4">
                                 <div className="flex items-start gap-3">
                                     <div className="flex items-center gap-2 pt-0.5 shrink-0">
@@ -532,7 +532,7 @@ export default function BuyerRFIQuestionsPage() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
+                                                <Badge data-testid={`question-type-badge-${q.questionId}`} variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
                                                     {formatType(q.questionType)}
                                                 </Badge>
                                                 {/* Weight badge */}
@@ -543,17 +543,17 @@ export default function BuyerRFIQuestionsPage() {
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-1">
+                                            <div data-testid={`question-actions-${q.questionId}`} className="flex items-center gap-1">
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => openView(q)}>
                                                     <Eye className="h-3.5 w-3.5" />
                                                 </Button>
                                                 {canEdit(q) && (
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => openEdit(q)}>
+                                                    <Button data-testid={`question-edit-btn-${q.questionId}`} variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => openEdit(q)}>
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </Button>
                                                 )}
                                                 {canDelete(q) && (
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Delete" onClick={() => handleDelete(q.questionId as any)}>
+                                                    <Button data-testid={`question-delete-btn-${q.questionId}`} variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Delete" onClick={() => handleDelete(q.questionId as any)}>
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
                                                 )}
@@ -706,6 +706,7 @@ export default function BuyerRFIQuestionsPage() {
                         <div className="space-y-1.5">
                             <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Question Text</Label>
                             <Textarea
+                                data-testid="question-text-input"
                                 value={form.text}
                                 onChange={(e) => { setForm({ ...form, text: e.target.value }); setFormErrors({ ...formErrors, text: "" }); }}
                                 rows={2}
@@ -724,7 +725,7 @@ export default function BuyerRFIQuestionsPage() {
                                     onValueChange={(v) => handleTypeChange(v as QuestionType)}
                                     disabled={editingId ? !canEdit(currentQuestion!) : false}
                                 >
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger data-testid="question-type-select"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {QUESTION_TYPES.map((t) => (
                                             <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -739,7 +740,7 @@ export default function BuyerRFIQuestionsPage() {
                                     onValueChange={(v) => setForm({ ...form, category: v })}
                                     disabled={editingId ? !canEdit(currentQuestion!) : false}
                                 >
-                                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                                    <SelectTrigger data-testid="question-category-input"><SelectValue placeholder="Select…" /></SelectTrigger>
                                     <SelectContent>
                                         {CATEGORIES.filter((c) => c !== "All").map((c) => (
                                             <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -785,6 +786,7 @@ export default function BuyerRFIQuestionsPage() {
                         <div className="flex gap-6">
                             <label className="flex items-center gap-2 cursor-pointer text-sm">
                                 <Checkbox
+                                    data-testid="question-mandatory-checkbox"
                                     checked={form.isMandatory}
                                     onCheckedChange={(c) => setForm({ ...form, isMandatory: !!c })}
                                     disabled={editingId ? !canEdit(currentQuestion!) : false}
@@ -895,7 +897,7 @@ export default function BuyerRFIQuestionsPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                         {(!editingId || canEdit(currentQuestion!)) && (
-                            <Button onClick={handleSave} disabled={saving}>
+                            <Button data-testid="save-question-btn" onClick={handleSave} disabled={saving}>
                                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                                 {editingId ? "Update" : "Create"} Question
                             </Button>

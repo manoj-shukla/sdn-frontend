@@ -201,7 +201,7 @@ test.describe('Buyer – Template Library', () => {
         await page.waitForURL('**/buyer/rfi/templates/create', { timeout: 10000 });
     });
 
-    test('T9: Buyer can fill, save draft, and publish a new template', async ({ page }) => {
+    test('T9: Buyer can fill and publish a new template', async ({ page }) => {
         await setupTemplateRoutes(page);
         await page.goto('/buyer/rfi/templates/create');
 
@@ -223,12 +223,9 @@ test.describe('Buyer – Template Library', () => {
         await typeSelect.click();
         await page.getByRole('option', { name: /short text/i }).click();
 
-        // Save Draft
-        await page.getByTestId('save-draft-btn').click();
-        
-        // Publish
+        // Publish directly (create mode: clicking publish saves + publishes in one step)
         await page.getByTestId('publish-template-btn').click();
-        await expect(page.getByTestId('confirm-publish-btn')).toBeVisible();
+        await expect(page.getByTestId('confirm-publish-btn')).toBeVisible({ timeout: 5000 });
         await page.getByTestId('confirm-publish-btn').click();
 
         await page.waitForURL('**/buyer/rfi/templates', { timeout: 10000 });

@@ -163,7 +163,7 @@ export default function BuyerUsersPage() {
                 </div>
                 <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button data-testid="add-user-btn">
                             <Plus className="mr-2 h-4 w-4" />
                             Add User
                         </Button>

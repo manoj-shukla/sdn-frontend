@@ -207,7 +207,6 @@ test.describe('Buyer – Question Library', () => {
         await page.goto('/buyer/rfi/questions');
         await expect(page.getByTestId('question-row-lib-q-1')).toBeVisible({ timeout: 15000 });
 
-        await page.getByTestId('question-actions-lib-q-1').click();
         await page.getByTestId('question-edit-btn-lib-q-1').click();
         await expect(page.getByTestId('question-text-input')).toBeVisible({ timeout: 5000 });
 
@@ -241,7 +240,6 @@ test.describe('Buyer – Question Library', () => {
         await expect(page.getByTestId('question-row-lib-q-5')).toBeVisible({ timeout: 15000 });
 
         page.once('dialog', d => d.accept());
-        await page.getByTestId('question-actions-lib-q-5').click();
         await page.getByTestId('question-delete-btn-lib-q-5').click();
         
         await expect(page.getByTestId('question-row-lib-q-5')).not.toBeVisible({ timeout: 5000 });

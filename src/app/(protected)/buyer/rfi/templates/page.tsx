@@ -115,10 +115,10 @@ export default function BuyerRFITemplatesPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold text-slate-900">Template Library</h2>
+                    <h2 data-testid="template-library-heading" className="text-lg font-semibold text-slate-900">Template Library</h2>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button className="gap-2" onClick={() => router.push("/buyer/rfi/templates/create")}>
+                    <Button data-testid="create-template-btn" className="gap-2" onClick={() => router.push("/buyer/rfi/templates/create")}>
                         <Plus className="h-4 w-4" />
                         New Template
                     </Button>
@@ -177,7 +177,7 @@ export default function BuyerRFITemplatesPage() {
                                 {/* Status badge */}
                                 <div className="flex items-center justify-between mb-3">
                                     <FileText className="h-5 w-5 text-muted-foreground" />
-                                    <RFIStatusBadge status={t.status} />
+                                    <span data-testid={`template-status-${t.templateId}`}><RFIStatusBadge status={t.status} /></span>
                                 </div>
 
                                 {/* Template name */}
@@ -204,7 +204,7 @@ export default function BuyerRFITemplatesPage() {
                                     <span className="text-xs text-muted-foreground">
                                         {t.sections?.reduce((acc, s) => acc + (s.questions?.length ?? 0), 0) ?? 0} questions
                                     </span>
-                                    <div className="flex gap-1">
+                                    <div data-testid={`template-action-menu-${t.templateId}`} className="flex gap-1">
                                         {/* View - available for published/archived templates */}
                                         {(t.status === "PUBLISHED" || t.status === "ARCHIVED") && (
                                             <Button

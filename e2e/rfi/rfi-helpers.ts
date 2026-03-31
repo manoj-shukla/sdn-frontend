@@ -98,8 +98,8 @@ export async function setupGlobalMocks(page: Page) {
         await route.fulfill({ status: 200, json: { messages: [], total: 0 } });
     });
     
-    // 3. Mock auth/me
-    await page.route(/\/api\/auth\/me/, async (route) => {
+    // 3. Mock auth/me (matches both /auth/me and /api/auth/me)
+    await page.route(/\/auth\/me/, async (route) => {
         const cookies = await page.context().cookies();
         const roleCookie = cookies.find(c => c.name === 'role')?.value || 'BUYER';
         

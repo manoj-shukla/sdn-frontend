@@ -90,7 +90,7 @@ export default function RFILayout({ children }: { children: React.ReactNode }) {
                     {/* Title & Global Actions */}
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                            <h1 data-testid="rfi-events-heading" className="text-2xl font-bold tracking-tight text-slate-900">
                                 {isAdmin ? "RFI Question Library" : "RFI Module"}
                             </h1>
                             <p className="text-sm text-muted-foreground mt-0.5">
@@ -109,6 +109,7 @@ export default function RFILayout({ children }: { children: React.ReactNode }) {
                                 </Button>
                                 <Button
                                     className="gap-2 h-9"
+                                    data-testid="create-event-btn"
                                     onClick={() => router.push('/buyer/rfi/create')}
                                 >
                                     <Plus className="h-4 w-4" />
