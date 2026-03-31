@@ -29,6 +29,7 @@ export default function BuyerRFIEventDetailPage() {
     const [activeTab, setActiveTab] = useState("invitations");
     const [closeDialogOpen, setCloseDialogOpen] = useState(false);
     const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+    const [publishDialogOpen, setPublishDialogOpen] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [addInvDialogOpen, setAddInvDialogOpen] = useState(false);
     const [emailInvDialogOpen, setEmailInvDialogOpen] = useState(false);
@@ -66,6 +67,20 @@ export default function BuyerRFIEventDetailPage() {
             fetchAll();
         } catch {
             toast.error("Failed to close RFI.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handlePublishRFI = async () => {
+        setActionLoading(true);
+        try {
+            await apiClient.post(`/api/rfi/events/${id}/publish`);
+            toast.success("RFI published successfully.");
+            setPublishDialogOpen(false);
+            fetchAll();
+        } catch {
+            toast.error("Failed to publish RFI.");
         } finally {
             setActionLoading(false);
         }
@@ -183,6 +198,11 @@ export default function BuyerRFIEventDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
+                    {event.status === "DRAFT" && (
+                        <Button data-testid="publish-event-btn" size="sm" onClick={() => setPublishDialogOpen(true)}>
+                            <Send className="h-4 w-4 mr-1.5" /> Publish RFI
+                        </Button>
+                    )}
                     {event.status === "OPEN" && (
                         <Button data-testid="close-event-btn" variant="outline" size="sm" onClick={() => setCloseDialogOpen(true)}>
                             <XCircle className="h-4 w-4 mr-1.5" /> Close RFI
@@ -329,6 +349,31 @@ export default function BuyerRFIEventDetailPage() {
                 </TabsContent>
 
             </Tabs>
+
+            {/* ── Publish RFI Dialog ── */}
+            <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Publish RFI Event</DialogTitle>
+                        <DialogDescription>
+                            Publishing this RFI will make it live and notify all invited suppliers. They will be able to start submitting responses.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {invitations.length === 0 && (
+                        <div className="flex items-start gap-2 bg-amber-50 text-amber-800 p-3 rounded text-sm">
+                            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                            <p>No suppliers have been invited yet. You can still publish and add suppliers afterwards.</p>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPublishDialogOpen(false)}>Cancel</Button>
+                        <Button data-testid="publish-rfi-confirm-btn" onClick={handlePublishRFI} disabled={actionLoading}>
+                            {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Publish RFI
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* ── Close RFI Dialog ── */}
             <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
