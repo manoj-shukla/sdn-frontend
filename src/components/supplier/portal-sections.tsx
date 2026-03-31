@@ -913,6 +913,33 @@ export function DocumentsSection() {
     };
 
     return (
+        <div className="space-y-4">
+            {status === 'REWORK_REQUIRED' && (
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-md">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="text-sm font-bold text-orange-900">Action Required: Rework Requested</h3>
+                            <p className="text-xs text-orange-700 mt-1 leading-relaxed">
+                                A buyer reviewer has requested changes to your submission. Please review your documents, re-upload any that need updating, and resubmit your profile.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {status === 'REJECTED' && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="text-sm font-bold text-red-900">Profile Rejected</h3>
+                            <p className="text-xs text-red-700 mt-1 leading-relaxed">
+                                Your onboarding application was rejected. Please contact your procurement team for details.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         <Card>
             <CardHeader>
                 <CardTitle>Required Documents</CardTitle>
@@ -994,6 +1021,7 @@ export function DocumentsSection() {
                 </div>
             </CardContent>
         </Card>
+        </div>
     );
 }
 

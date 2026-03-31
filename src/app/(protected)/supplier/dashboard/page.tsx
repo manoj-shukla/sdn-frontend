@@ -140,6 +140,11 @@ function SupplierDashboardContent() {
                             const filePath = d.filePath || d.filepath;
                             let vStatus = (d.verificationStatus || d.verificationstatus || 'UPLOADED').toUpperCase();
                             if (vStatus === 'APPROVED') vStatus = 'VERIFIED';
+                            // PENDING / PENDING_APPROVAL means the document WAS uploaded
+                            // but is awaiting buyer verification — treat as UPLOADED in the store
+                            // so the DocumentsSection shows View/Re-upload instead of the
+                            // initial Upload button (avoiding the false "not uploaded" appearance).
+                            if (vStatus === 'PENDING' || vStatus === 'PENDING_APPROVAL') vStatus = 'UPLOADED';
                             store.updateDocumentStatus(match.id, vStatus, filePath);
                         }
                     });

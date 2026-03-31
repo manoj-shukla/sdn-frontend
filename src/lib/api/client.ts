@@ -15,7 +15,11 @@ apiClient.interceptors.request.use((config) => {
             config.headers.Authorization = `Bearer ${token}`;
             // console.log("[API Client] Attaching token:", token.substring(0, 10) + "...");
         } else {
-            console.warn("[API Client] No token found in localStorage for request:", config.url);
+            // Suppress warning on auth pages — they are intentionally unauthenticated
+            const isOnAuthPage = window.location.pathname.startsWith('/auth');
+            if (!isOnAuthPage) {
+                console.warn("[API Client] No token found in localStorage for request:", config.url);
+            }
         }
 
         try {
@@ -44,7 +48,9 @@ apiClient.interceptors.response.use(
     (response) => response.data,
     (error) => {
         // Handle 401 Unauthorized or 404 on auth endpoints (means invalid session)
-        if (error.response?.status === 401 || (error.response?.status === 404 && error.config.url.includes('/auth/me'))) {
+        // Skip redirect if we're already on an auth page (e.g. login returning 401 for bad creds)
+        const isOnAuthPage = typeof window !== "undefined" && window.location.pathname.startsWith('/auth');
+        if (!isOnAuthPage && (error.response?.status === 401 || (error.response?.status === 404 && error.config.url.includes('/auth/me')))) {
             if (typeof window !== "undefined") {
                 localStorage.removeItem("token");
                 localStorage.removeItem("auth-storage"); // Clear correct auth store key

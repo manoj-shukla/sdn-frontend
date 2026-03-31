@@ -57,7 +57,15 @@ export default function BuyerUsersPage() {
             }));
             setCircles(mappedCircles);
 
-            setRoles((rolesRes as any).data || rolesRes || []);
+            const mappedRoles = (rolesRes as any).data || rolesRes || [];
+            setRoles(mappedRoles);
+            // Default subRole to the first available role so the dropdown isn't empty
+            if (mappedRoles.length > 0) {
+                const firstName = mappedRoles[0].roleName || mappedRoles[0].rolename;
+                if (firstName) {
+                    setNewUser(prev => ({ ...prev, subRole: prev.subRole === 'User' ? firstName : prev.subRole }));
+                }
+            }
         } catch (error: any) {
             console.error("Failed to fetch buyer team data", error);
             const msg = error.response?.data?.error || error.message;
@@ -74,7 +82,15 @@ export default function BuyerUsersPage() {
     }, [canManageUsers, currentUser?.buyerId]);
 
     const handleAddUser = async () => {
-        if (!currentUser?.buyerId) return;
+        if (!currentUser?.buyerId) {
+            toast.error("Session error: buyer ID not found. Please log out and log in again.");
+            return;
+        }
+
+        if (!newUser.name.trim()) {
+            toast.error("Full name is required");
+            return;
+        }
 
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email)) {
             toast.error("Invalid email format");
@@ -97,16 +113,23 @@ export default function BuyerUsersPage() {
             } else {
                 await apiClient.post('/api/users', payload);
             }
-            fetchData();
+            await fetchData();
             setIsAddUserOpen(false);
-            setNewUser({ name: "", email: "", role: "BUYER", subRole: "User", circleId: "", password: "" });
+            // Reset with first available role as default subRole
+            const firstRole = roles.length > 0 ? (roles[0].roleName || roles[0].rolename || 'User') : 'User';
+            setNewUser({ name: "", email: "", role: "BUYER", subRole: firstRole, circleId: "", password: "" });
             setEditingUserId(null);
+            toast.success(editingUserId ? "User updated successfully" : "User created successfully");
         } catch (error: any) {
-            const apiError = error?.response?.data?.error;
-            if (apiError === "Invalid email format") {
-                toast.error("Invalid email format");
+            const apiError = error?.response?.data?.error || error?.message || '';
+            if (apiError.toLowerCase().includes('email')) {
+                toast.error(apiError || "Invalid email address");
+            } else if (apiError.toLowerCase().includes('already exists') || apiError.toLowerCase().includes('duplicate') || apiError.toLowerCase().includes('unique')) {
+                toast.error("A user with this email already exists");
+            } else if (apiError.toLowerCase().includes('password')) {
+                toast.error(apiError || "Password does not meet requirements (minimum 8 characters)");
             } else {
-                toast.error("Failed to save user");
+                toast.error(apiError || "Failed to save user. Please try again.");
             }
         }
     };
