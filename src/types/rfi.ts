@@ -5,7 +5,7 @@
 // ---- Enums / Literal Union Types ----
 
 export type RFITemplateStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-export type RFIEventStatus = "DRAFT" | "OPEN" | "CLOSED" | "CONVERTED";
+export type RFIEventStatus = "DRAFT" | "SCHEDULED" | "OPEN" | "CLOSED" | "CONVERTED";
 export type InvitationStatus = "SENT" | "VIEWED" | "IN_PROGRESS" | "SUBMITTED" | "EXPIRED";
 export type SupplierEvaluationStatus = "PENDING" | "SHORTLISTED" | "REJECTED" | "UNDER_REVIEW";
 export type QuestionType =
@@ -102,6 +102,8 @@ export interface RFITemplate {
     status: RFITemplateStatus;
     version: number;
     sections: RFITemplateSection[];
+    sectionCount?: number;
+    questionCount?: number;
     createdAt: string;
     updatedAt?: string;
     publishedAt?: string;
@@ -114,6 +116,7 @@ export interface RFIEvent {
     title: string;
     description?: string;
     status: RFIEventStatus;
+    startDate?: string;       // optional — if set, event is SCHEDULED until this date
     deadline: string;
     templateId: number;
     template?: RFITemplate;
@@ -308,6 +311,7 @@ export interface CreateRFITemplatePayload {
     subcategory?: string;
     regions?: string[];
     regulatoryOverlays?: string[];
+    version?: number;
     sections: Omit<RFITemplateSection, "sectionId">[];
 }
 

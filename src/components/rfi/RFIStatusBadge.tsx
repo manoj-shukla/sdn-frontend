@@ -8,6 +8,7 @@ type AnyRFIStatus = RFIEventStatus | RFITemplateStatus | InvitationStatus | Supp
 const STATUS_CONFIG: Record<string, { variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning"; label: string }> = {
     // Event statuses
     DRAFT: { variant: "secondary", label: "DRAFT" },
+    SCHEDULED: { variant: "warning", label: "SCHEDULED" },
     OPEN: { variant: "success", label: "OPEN" },
     CLOSED: { variant: "outline", label: "CLOSED" },
     CONVERTED: { variant: "default", label: "CONVERTED" },

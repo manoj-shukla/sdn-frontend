@@ -4,6 +4,7 @@
 
 import * as XLSX from "xlsx";
 import type {
+    RFIEvent,
     RFIEvaluationSupplier,
     RFITemplateSection,
 } from "@/types/rfi";
@@ -279,4 +280,125 @@ export async function exportSupplierPDF(
     }
 
     doc.save(`${supplier.supplierName.replace(/\s+/g, "_")}_RFI_Response_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ── Excel: RFI events list (dashboard export) ─────────────────────────────────
+
+export function exportEventsExcel(events: RFIEvent[]) {
+    const wb = XLSX.utils.book_new();
+
+    const rows: any[][] = [
+        ["Title", "Status", "Category", "Suppliers Invited", "Submissions", "Completion %", "Deadline", "Region", "Created"],
+        ...events.map((e) => [
+            e.title,
+            e.status,
+            (e as any).category || "",
+            e.supplierCount ?? 0,
+            e.submittedCount ?? 0,
+            e.supplierCount
+                ? Math.round(((e.submittedCount ?? 0) / e.supplierCount) * 100)
+                : 0,
+            e.deadline ? new Date(e.deadline).toLocaleDateString() : "",
+            (e as any).region || "",
+            (e as any).createdAt ? new Date((e as any).createdAt).toLocaleDateString() : "",
+        ]),
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [
+        { wch: 42 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
+        { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "RFI Events");
+
+    const buffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    triggerDownload(
+        new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+        `RFI_Events_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+}
+
+// ── Excel: analytics report ───────────────────────────────────────────────────
+
+export function exportAnalyticsExcel(opts: {
+    period: string;
+    events: RFIEvent[];
+    stats: { label: string; value: string; sub: string }[];
+    completionByMonth: { month: string; pct: number }[];
+    eventsByCategory: { cat: string; count: number }[];
+    eventStatusRows: { label: string; pct: number }[];
+    responseRows: { label: string; pct: number }[];
+}) {
+    const { period, events, stats, completionByMonth, eventsByCategory, eventStatusRows, responseRows } = opts;
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1 — Summary KPIs
+    const wsSummary = XLSX.utils.aoa_to_sheet([
+        ["RFI Analytics Report"],
+        ["Period", period === "3m" ? "Last 3 Months" : period === "6m" ? "Last 6 Months" : "This Year"],
+        ["Generated", new Date().toLocaleString()],
+        ["Total Events Included", events.length],
+        [],
+        ["Metric", "Value", "Detail"],
+        ...stats.map((s) => [s.label, s.value, s.sub]),
+    ]);
+    wsSummary["!cols"] = [{ wch: 30 }, { wch: 18 }, { wch: 36 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    // Sheet 2 — Monthly Completion Trend
+    if (completionByMonth.length > 0) {
+        const wsMonthly = XLSX.utils.aoa_to_sheet([
+            ["Month", "Avg Completion %"],
+            ...completionByMonth.map((d) => [d.month, d.pct]),
+        ]);
+        wsMonthly["!cols"] = [{ wch: 12 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(wb, wsMonthly, "Monthly Trend");
+    }
+
+    // Sheet 3 — Events by Category
+    if (eventsByCategory.length > 0) {
+        const wsCat = XLSX.utils.aoa_to_sheet([
+            ["Category", "Event Count"],
+            ...eventsByCategory.map((d) => [d.cat, d.count]),
+        ]);
+        wsCat["!cols"] = [{ wch: 22 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, wsCat, "By Category");
+    }
+
+    // Sheet 4 — Event Status Breakdown
+    const statusRows = [
+        ...(eventStatusRows.length > 0 ? eventStatusRows : []),
+        ...(responseRows.length > 0 ? responseRows : []),
+    ];
+    if (statusRows.length > 0) {
+        const wsStatus = XLSX.utils.aoa_to_sheet([
+            ["Dimension", "% Share"],
+            ...statusRows.map((d) => [d.label, d.pct]),
+        ]);
+        wsStatus["!cols"] = [{ wch: 28 }, { wch: 12 }];
+        XLSX.utils.book_append_sheet(wb, wsStatus, "Status Breakdown");
+    }
+
+    // Sheet 5 — All Events Detail
+    if (events.length > 0) {
+        const wsEvents = XLSX.utils.aoa_to_sheet([
+            ["Title", "Status", "Category", "Suppliers", "Submissions", "Deadline"],
+            ...events.map((e) => [
+                e.title,
+                e.status,
+                (e as any).category || "",
+                e.supplierCount ?? 0,
+                e.submittedCount ?? 0,
+                e.deadline ? new Date(e.deadline).toLocaleDateString() : "",
+            ]),
+        ]);
+        wsEvents["!cols"] = [{ wch: 40 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, wsEvents, "Events");
+    }
+
+    const buffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    triggerDownload(
+        new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+        `RFI_Analytics_${period}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
 }

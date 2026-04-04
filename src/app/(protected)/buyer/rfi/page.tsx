@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { RFIEvent, RFIEventStatus } from "@/types/rfi";
+import { exportEventsExcel } from "@/lib/rfi/export";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -252,7 +253,16 @@ export default function BuyerRFIDashboardPage() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="ml-auto gap-1.5" onClick={() => toast.info("Exporting events…")}>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto gap-1.5"
+                    disabled={events.length === 0}
+                    onClick={() => {
+                        exportEventsExcel(filtered.length > 0 ? filtered : events);
+                        toast.success("Downloading events…");
+                    }}
+                >
                     <Download className="h-3.5 w-3.5" />
                     Export
                 </Button>
@@ -352,7 +362,7 @@ export default function BuyerRFIDashboardPage() {
                                                 {/* Actions */}
                                                 <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        {event.status === "DRAFT" ? (
+                                                        {(event.status === "DRAFT" || event.status === "SCHEDULED") ? (
                                                             <Button
                                                                 size="sm"
                                                                 className="h-7 text-xs gap-1"

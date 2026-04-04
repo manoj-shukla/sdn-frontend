@@ -46,6 +46,9 @@ const REG_TAGS = ["None", "GST", "PAN", "MSME", "IEC", "PF_ESI", "GDPR", "SOC2",
 interface LocalQuestion extends RFITemplateQuestion {
     _localId: string;
     question: RFIQuestion;
+    /** Set when this question was added from the question library */
+    libraryQuestionId?: string | number | null;
+    fromLibrary?: boolean;
 }
 
 interface LocalSection extends Omit<RFITemplateSection, "questions"> {
@@ -101,6 +104,7 @@ export function TemplateBuilder({ initial, mode }: Props) {
     const [subcategory, setSubcategory] = useState(initial?.subcategory ?? "");
     const [regionsRaw, setRegionsRaw] = useState(initial?.regions?.join(", ") ?? "");
     const [overlaysRaw, setOverlaysRaw] = useState(initial?.regulatoryOverlays?.join(", ") ?? "");
+    const [version, setVersion] = useState<number>(initial?.version ?? 1);
 
     // ── Sections ──
     const [sections, setSections] = useState<LocalSection[]>(
@@ -111,6 +115,9 @@ export function TemplateBuilder({ initial, mode }: Props) {
             questions: s.questions.map((q) => ({
                 ...q,
                 _localId: uid(),
+                // Carry library linkage through for round-trip saves
+                libraryQuestionId: (q as any).libraryQuestionId ?? null,
+                fromLibrary: !!(q as any).libraryQuestionId || !!(q as any).fromLibrary,
                 question: q.question ?? {
                     questionId: q.questionId,
                     text: (q as any).text || (q as any).questionText || "",
@@ -234,8 +241,14 @@ export function TemplateBuilder({ initial, mode }: Props) {
     const addFromLibrary = (q: RFIQuestion) => {
         if (!pickerSectionId) return;
         const lq: LocalQuestion = {
-            _localId: uid(), questionId: q.questionId, isMandatory: q.isMandatory,
-            promoteToRfp: q.promoteToRfp, orderIndex: 0, question: q,
+            _localId: uid(),
+            questionId: q.questionId,   // library question's ID — sent to backend as libraryQuestionId reference
+            libraryQuestionId: q.questionId,
+            fromLibrary: true,
+            isMandatory: q.isMandatory,
+            promoteToRfp: q.promoteToRfp,
+            orderIndex: 0,
+            question: q,
         };
         setSections((p) => p.map((s) =>
             s._localId !== pickerSectionId ? s : { ...s, questions: [...s.questions, lq] }
@@ -249,6 +262,7 @@ export function TemplateBuilder({ initial, mode }: Props) {
         name: name.trim(),
         category: category || undefined,
         subcategory: subcategory || undefined,
+        version,
         regions: regionsRaw.split(",").map((r) => r.trim()).filter(Boolean),
         regulatoryOverlays: overlaysRaw.split(",").map((r) => r.trim()).filter(Boolean),
         sections: sections.map((s, si) => ({
@@ -277,13 +291,16 @@ export function TemplateBuilder({ initial, mode }: Props) {
         try {
             if (mode === "create") {
                 const res = await apiClient.post("/api/rfi/templates", buildPayload()) as any;
-                toast.success("Draft saved.");
+                toast.success("Template saved as draft. You can now add more questions or publish it when ready.");
                 router.push(`/buyer/rfi/templates/${res.templateId}/edit`);
             } else {
                 await apiClient.put(`/api/rfi/templates/${initial!.templateId}`, buildPayload());
                 toast.success("Template updated.");
             }
-        } catch { toast.error("Failed to save."); }
+        } catch (err: any) {
+            const msg = err?.response?.data?.error || err?.message || "Failed to save.";
+            toast.error(msg);
+        }
         finally { setSaving(false); }
     };
 
@@ -316,7 +333,7 @@ export function TemplateBuilder({ initial, mode }: Props) {
     );
 
     return (
-        <div className="flex h-screen overflow-hidden bg-gray-50 flex-col">
+        <div className="flex h-full overflow-hidden bg-gray-50 flex-col">
 
             {/* ── Top Header Bar ─────────────────────────────────────── */}
             <div className="flex-shrink-0 bg-white border-b shadow-sm px-4 h-14 flex items-center gap-3">
@@ -349,6 +366,8 @@ export function TemplateBuilder({ initial, mode }: Props) {
                     <span>{sections.length} section{sections.length !== 1 ? "s" : ""}</span>
                     <span>·</span>
                     <span>{totalQs} question{totalQs !== 1 ? "s" : ""}</span>
+                    <span>·</span>
+                    <span className="text-gray-500 font-medium">v{version}</span>
                     {isPublished && (
                         <>
                             <span>·</span>
@@ -368,7 +387,9 @@ export function TemplateBuilder({ initial, mode }: Props) {
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     Save Draft
                 </Button>
-                {!isPublished && (
+                {/* Publish only available in edit mode (template already saved as DRAFT).
+                    New templates must be saved as draft first, then published from the edit page. */}
+                {mode === "edit" && !isPublished && (
                     <Button data-testid="publish-template-btn" size="sm" onClick={() => setPublishConfirm(true)} disabled={saving} className="gap-1.5">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         Publish
@@ -525,6 +546,11 @@ export function TemplateBuilder({ initial, mode }: Props) {
                                                         <span className={cn("text-xs px-1.5 py-0.5 rounded font-medium", typeColor(q.question.questionType))}>
                                                             {typeLabel(q.question.questionType)}
                                                         </span>
+                                                        {q.fromLibrary && (
+                                                            <span className="text-xs flex items-center gap-1 text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-medium">
+                                                                <BookOpen className="h-2.5 w-2.5" /> Library
+                                                            </span>
+                                                        )}
                                                         {q.isMandatory && (
                                                             <span className="text-xs text-red-500 font-medium">Required</span>
                                                         )}
@@ -738,6 +764,19 @@ export function TemplateBuilder({ initial, mode }: Props) {
                                 <Label>Sub-category</Label>
                                 <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="e.g. Cloud Infrastructure" />
                             </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Version <span className="text-xs text-gray-400 font-normal">(integer, e.g. 1, 2, 3)</span></Label>
+                            <Input
+                                type="number"
+                                min={1}
+                                value={version}
+                                onChange={(e) => {
+                                    const v = parseInt(e.target.value);
+                                    if (!isNaN(v) && v >= 1) setVersion(v);
+                                }}
+                                className="max-w-[100px]"
+                            />
                         </div>
                         <div className="space-y-1.5">
                             <Label>Regions <span className="text-xs text-gray-400">(comma-separated)</span></Label>

@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RFIStatusBadge } from "@/components/rfi/RFIStatusBadge";
-import { FileText, Plus, Search, Loader2, Archive, Copy, Pencil, Trash2, Eye, Globe } from "lucide-react";
+import { FileText, Plus, Search, Loader2, Archive, Copy, Pencil, Trash2, Eye, Globe, Upload } from "lucide-react";
+import { RFITemplateImportDialog } from "@/components/rfi/RFITemplateImportDialog";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { RFITemplate } from "@/types/rfi";
@@ -23,6 +24,7 @@ export default function BuyerRFITemplatesPage() {
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [viewingTemplate, setViewingTemplate] = useState<RFITemplate | null>(null);
     const [viewLoading, setViewLoading] = useState(false);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
 
     const fetchTemplates = async () => {
         try {
@@ -52,14 +54,18 @@ export default function BuyerRFITemplatesPage() {
         }
     };
 
-    const handleArchive = async (id: number) => {
-        if (!confirm("Archive this template? It will no longer be available for new RFI events.")) return;
+    const handleArchive = async (id: number, status: string) => {
+        const isDraft = status === "DRAFT";
+        const msg = isDraft
+            ? "Delete this draft? This cannot be undone."
+            : "Archive this template? It will no longer be available for new RFI events.";
+        if (!confirm(msg)) return;
         try {
             await apiClient.post(`/api/rfi/templates/${id}/archive`);
-            toast.success("Template archived.");
+            toast.success(isDraft ? "Draft deleted." : "Template archived.");
             fetchTemplates();
-        } catch (err) {
-            toast.error("Failed to archive template.");
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || (isDraft ? "Failed to delete draft." : "Failed to archive template."));
         }
     };
 
@@ -78,10 +84,48 @@ export default function BuyerRFITemplatesPage() {
         setViewDialogOpen(true);
         setViewLoading(true);
         try {
-            const res = await apiClient.get(`/api/rfi/templates/${t.templateId}`) as any;
-            setViewingTemplate(res);
+            // Fetch template detail + question library in parallel so we can
+            // hydrate any question whose `text` is missing from the template response
+            const [templateRes, questionsRes] = await Promise.all([
+                apiClient.get(`/api/rfi/templates/${t.templateId}`) as Promise<any>,
+                apiClient.get("/api/rfi/questions").catch(() => null) as Promise<any>,
+            ]);
+
+            // Build a questionId → question lookup from the library
+            const rawQuestions: any[] =
+                questionsRes?.content || (Array.isArray(questionsRes) ? questionsRes : []);
+            const questionMap = new Map<string, any>();
+            rawQuestions.forEach((q: any) => {
+                if (q.questionId != null) questionMap.set(String(q.questionId), q);
+            });
+
+            // Hydrate each template question with text if the API didn't return it
+            const hydrated = { ...templateRes };
+            if (Array.isArray(hydrated.sections)) {
+                hydrated.sections = hydrated.sections.map((section: any) => ({
+                    ...section,
+                    questions: (section.questions || []).map((tq: any) => {
+                        const existing =
+                            tq.question?.text ||
+                            (tq.question as any)?.questionText ||
+                            (tq as any)?.questionText;
+                        if (existing) return tq; // already has text
+                        const library = questionMap.get(String(tq.questionId));
+                        if (!library) return tq;
+                        return {
+                            ...tq,
+                            question: {
+                                ...(tq.question || {}),
+                                ...library,
+                            },
+                        };
+                    }),
+                }));
+            }
+
+            setViewingTemplate(hydrated);
         } catch (err) {
-            // If detail fetch fails, use what we have
+            // If detail fetch fails, fall back to the list-level data
             setViewingTemplate(t);
         } finally {
             setViewLoading(false);
@@ -118,6 +162,10 @@ export default function BuyerRFITemplatesPage() {
                     <h2 data-testid="template-library-heading" className="text-lg font-semibold text-slate-900">Template Library</h2>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Button variant="outline" className="gap-2" onClick={() => setImportDialogOpen(true)}>
+                        <Upload className="h-4 w-4" />
+                        Import Templates
+                    </Button>
                     <Button data-testid="create-template-btn" className="gap-2" onClick={() => router.push("/buyer/rfi/templates/create")}>
                         <Plus className="h-4 w-4" />
                         New Template
@@ -202,7 +250,7 @@ export default function BuyerRFITemplatesPage() {
                                 {/* Actions */}
                                 <div className="flex items-center justify-between border-t pt-3">
                                     <span className="text-xs text-muted-foreground">
-                                        {t.sections?.reduce((acc, s) => acc + (s.questions?.length ?? 0), 0) ?? 0} questions
+                                        {t.questionCount ?? 0} questions
                                     </span>
                                     <div data-testid={`template-action-menu-${t.templateId}`} className="flex gap-1">
                                         {/* View - available for published/archived templates */}
@@ -253,17 +301,17 @@ export default function BuyerRFITemplatesPage() {
                                         >
                                             <Copy className="h-3.5 w-3.5" />
                                         </Button>
-                                        {/* Archive */}
+                                        {/* Archive / Delete Draft */}
                                         {t.status !== "ARCHIVED" && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                                title="Archive"
-                                                onClick={() => handleArchive(t.templateId)}
+                                                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                title={t.status === "DRAFT" ? "Delete Draft" : "Archive"}
+                                                onClick={() => handleArchive(t.templateId, t.status)}
                                                 data-testid={`template-archive-btn-${t.templateId}`}
                                             >
-                                                <Archive className="h-3.5 w-3.5" />
+                                                {t.status === "DRAFT" ? <Trash2 className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
                                             </Button>
                                         )}
                                         {/* Use for new RFI */}
@@ -345,7 +393,7 @@ export default function BuyerRFITemplatesPage() {
                                                     </span>
                                                     <div className="flex-1">
                                                         <p className="text-sm font-medium text-slate-800">
-                                                            {tq.question?.text || `Question #${tq.questionId}`}
+                                                            {tq.question?.text || (tq.question as any)?.questionText || (tq as any)?.questionText || (tq as any)?.text || "Untitled question"}
                                                         </p>
                                                         <div className="flex gap-1.5 mt-1.5 flex-wrap">
                                                             {tq.question?.questionType && (
@@ -383,6 +431,16 @@ export default function BuyerRFITemplatesPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Import Templates Dialog */}
+            <RFITemplateImportDialog
+                isOpen={importDialogOpen}
+                onClose={() => setImportDialogOpen(false)}
+                onImported={() => {
+                    setImportDialogOpen(false);
+                    fetchTemplates();
+                }}
+            />
         </div>
     );
 }

@@ -184,6 +184,12 @@ export default function BuyerRFIEventDetailPage() {
                             <p className="text-muted-foreground text-sm mt-1">{event.description}</p>
                         )}
                         <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                            {event.startDate && (
+                                <span className="flex items-center gap-1.5 text-blue-600">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    Goes live: {new Date(event.startDate).toLocaleString()}
+                                </span>
+                            )}
                             <span className="flex items-center gap-1.5">
                                 <Calendar className="h-3.5 w-3.5" />
                                 Deadline: {new Date(event.deadline).toLocaleString()}
@@ -198,9 +204,10 @@ export default function BuyerRFIEventDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    {event.status === "DRAFT" && (
+                    {(event.status === "DRAFT" || event.status === "SCHEDULED") && (
                         <Button data-testid="publish-event-btn" size="sm" onClick={() => setPublishDialogOpen(true)}>
-                            <Send className="h-4 w-4 mr-1.5" /> Publish RFI
+                            <Send className="h-4 w-4 mr-1.5" />
+                            {event.status === "SCHEDULED" ? "Publish Now" : "Publish RFI"}
                         </Button>
                     )}
                     {event.status === "OPEN" && (
@@ -221,6 +228,18 @@ export default function BuyerRFIEventDetailPage() {
                     </Button>
                 </div>
             </div>
+
+            {/* ── Scheduled banner ── */}
+            {event.status === "SCHEDULED" && event.startDate && (
+                <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    <Calendar className="h-4 w-4 shrink-0 text-blue-600" />
+                    <p>
+                        This RFI is <strong>scheduled</strong> and will automatically go live on{" "}
+                        <strong>{new Date(event.startDate).toLocaleString()}</strong>.
+                        Suppliers won&apos;t receive invites until then. You can also publish it immediately using the button above.
+                    </p>
+                </div>
+            )}
 
             {/* ── Stats row ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -282,7 +301,7 @@ export default function BuyerRFIEventDetailPage() {
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base">Supplier Invitations</CardTitle>
-                                {(event.status === "DRAFT" || event.status === "OPEN") && (
+                                {(event.status === "DRAFT" || event.status === "SCHEDULED" || event.status === "OPEN") && (
                                     <Button size="sm" variant="outline" onClick={() => { fetchSuppliers(); setAddInvDialogOpen(true); }}>
                                         <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Supplier
                                     </Button>

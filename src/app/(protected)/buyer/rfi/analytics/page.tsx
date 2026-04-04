@@ -8,6 +8,7 @@ import { Download, BarChart3, TrendingUp, Clock, Users, Rocket, Loader2, Refresh
 import { toast } from "sonner";
 import apiClient from "@/lib/api/client";
 import type { RFIEvent } from "@/types/rfi";
+import { exportAnalyticsExcel } from "@/lib/rfi/export";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface BuyerAnalyticsAPI {
@@ -337,7 +338,19 @@ export default function RFIAnalyticsPage() {
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
-                        onClick={() => toast.info("Generating PDF report…")}
+                        disabled={loading || events.length === 0}
+                        onClick={() => {
+                            exportAnalyticsExcel({
+                                period,
+                                events,
+                                stats,
+                                completionByMonth,
+                                eventsByCategory,
+                                eventStatusRows,
+                                responseRows,
+                            });
+                            toast.success("Downloading analytics report…");
+                        }}
                     >
                         <Download className="h-3.5 w-3.5" /> Export Report
                     </Button>

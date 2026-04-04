@@ -43,6 +43,7 @@ export default function BuyerRFICreatePage() {
     // Step 2 — event details
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [startDate, setStartDate] = useState("");
     const [deadline, setDeadline] = useState("");
     const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
 
@@ -100,8 +101,10 @@ export default function BuyerRFICreatePage() {
     const validateDetails = () => {
         const errs: Record<string, string> = {};
         if (!title.trim()) errs.title = "Title is required.";
+        if (startDate && new Date(startDate) <= new Date()) errs.startDate = "Start date must be in the future.";
         if (!deadline) errs.deadline = "Deadline is required.";
         else if (new Date(deadline) <= new Date()) errs.deadline = "Deadline must be in the future.";
+        else if (startDate && new Date(deadline) <= new Date(startDate)) errs.deadline = "Deadline must be after the start date.";
         setDetailErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -123,6 +126,7 @@ export default function BuyerRFICreatePage() {
                 templateId: selectedTemplate!.templateId,
                 title,
                 description,
+                startDate: startDate || undefined,
                 deadline,
             }) as any;
 
@@ -165,6 +169,7 @@ export default function BuyerRFICreatePage() {
                 templateId: selectedTemplate.templateId,
                 title,
                 description,
+                startDate: startDate || undefined,
                 deadline,
             }) as any;
             toast.success("RFI saved as draft.");
@@ -343,17 +348,45 @@ export default function BuyerRFICreatePage() {
                                 placeholder="Briefly describe the purpose of this RFI…"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Response Deadline</Label>
-                            <Input
-                                data-testid="event-deadline-input"
-                                type="datetime-local"
-                                value={deadline}
-                                onChange={(e) => { setDeadline(e.target.value); setDetailErrors({ ...detailErrors, deadline: "" }); }}
-                                className={cn("max-w-xs", detailErrors.deadline ? "border-red-500" : "")}
-                            />
-                            {detailErrors.deadline && <p className="text-sm text-red-500">{detailErrors.deadline}</p>}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="space-y-2">
+                                <Label>
+                                    Start Date
+                                    <span className="text-muted-foreground font-normal ml-1">(optional)</span>
+                                </Label>
+                                <Input
+                                    data-testid="event-startdate-input"
+                                    type="datetime-local"
+                                    value={startDate}
+                                    onChange={(e) => { setStartDate(e.target.value); setDetailErrors({ ...detailErrors, startDate: "" }); }}
+                                    className={cn(detailErrors.startDate ? "border-red-500" : "")}
+                                />
+                                {detailErrors.startDate
+                                    ? <p className="text-sm text-red-500">{detailErrors.startDate}</p>
+                                    : <p className="text-xs text-muted-foreground">Leave blank to publish immediately.</p>
+                                }
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Response Deadline</Label>
+                                <Input
+                                    data-testid="event-deadline-input"
+                                    type="datetime-local"
+                                    value={deadline}
+                                    onChange={(e) => { setDeadline(e.target.value); setDetailErrors({ ...detailErrors, deadline: "" }); }}
+                                    className={cn(detailErrors.deadline ? "border-red-500" : "")}
+                                />
+                                {detailErrors.deadline && <p className="text-sm text-red-500">{detailErrors.deadline}</p>}
+                            </div>
                         </div>
+                        {startDate && new Date(startDate) > new Date() && (
+                            <div className="flex items-start gap-2 bg-blue-50 text-blue-800 p-3 rounded-lg text-sm">
+                                <Calendar className="h-4 w-4 mt-0.5 shrink-0 text-blue-600" />
+                                <p>
+                                    This RFI will be <strong>scheduled</strong> and automatically go live on{" "}
+                                    <strong>{new Date(startDate).toLocaleString()}</strong>. Suppliers won&apos;t receive invites until then.
+                                </p>
+                            </div>
+                        )}
                         {selectedTemplate && (
                             <div className="p-3 rounded-lg bg-indigo-50 flex gap-3 text-sm">
                                 <FileText className="h-4 w-4 text-indigo-600 mt-0.5 shrink-0" />
@@ -510,7 +543,13 @@ export default function BuyerRFICreatePage() {
                                 <span className="font-semibold">{title}</span>
                             </div>
                             <div>
-                                <span className="text-muted-foreground block mb-0.5">Deadline</span>
+                                <span className="text-muted-foreground block mb-0.5">Start Date</span>
+                                <span className="font-semibold">
+                                    {startDate ? new Date(startDate).toLocaleString() : <span className="text-muted-foreground font-normal">Immediate</span>}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block mb-0.5">Response Deadline</span>
                                 <span className="font-semibold">{deadline ? new Date(deadline).toLocaleString() : "—"}</span>
                             </div>
                             <div>
@@ -527,13 +566,23 @@ export default function BuyerRFICreatePage() {
                                 <p className="text-sm">{description}</p>
                             </div>
                         )}
-                        <div className="flex items-start gap-2 bg-amber-50 text-amber-800 p-3 rounded text-sm">
-                            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                            <p>
-                                Once published, suppliers will receive invitation emails immediately. The event
-                                deadline and template cannot be changed after publishing.
-                            </p>
-                        </div>
+                        {startDate && new Date(startDate) > new Date() ? (
+                            <div className="flex items-start gap-2 bg-blue-50 text-blue-800 p-3 rounded text-sm">
+                                <Calendar className="h-4 w-4 mt-0.5 shrink-0" />
+                                <p>
+                                    This RFI will be saved as <strong>Scheduled</strong>. Invite emails will go out automatically on{" "}
+                                    <strong>{new Date(startDate).toLocaleString()}</strong>.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-2 bg-amber-50 text-amber-800 p-3 rounded text-sm">
+                                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                                <p>
+                                    Once published, suppliers will receive invitation emails immediately. The event
+                                    deadline and template cannot be changed after publishing.
+                                </p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             )}

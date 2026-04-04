@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import apiClient from "@/lib/api/client";
 import { useAuthStore } from "@/lib/store/auth-store";
+import { RFIImportDialog } from "@/components/rfi/RFIImportDialog";
 
 interface RFITab {
     title: string;
@@ -28,6 +29,11 @@ export default function RFILayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { user } = useAuthStore();
+
+    // Template builder pages need full-height editor layout (no padding wrapper)
+    const isFullEditor =
+        pathname === "/buyer/rfi/templates/create" ||
+        (pathname.startsWith("/buyer/rfi/templates/") && pathname.endsWith("/edit"));
     const isAdmin = user?.role === "ADMIN";
 
     const [counts, setCounts] = useState({
@@ -35,6 +41,7 @@ export default function RFILayout({ children }: { children: React.ReactNode }) {
         templates: 0,
         questions: 0,
     });
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchCounts = async () => {
@@ -103,10 +110,13 @@ export default function RFILayout({ children }: { children: React.ReactNode }) {
                         {/* Only show global actions for buyer */}
                         {!isAdmin && (
                             <div className="flex items-center gap-3">
-                                <Button variant="outline" className="gap-2 h-9">
-                                    <Upload className="h-4 w-4" />
-                                    <span>Import</span>
-                                </Button>
+                                {/* Import Events — only on the RFI Events tab */}
+                                {pathname === "/buyer/rfi" && (
+                                    <Button variant="outline" className="gap-2 h-9" onClick={() => setImportDialogOpen(true)}>
+                                        <Upload className="h-4 w-4" />
+                                        <span>Import Events</span>
+                                    </Button>
+                                )}
                                 <Button
                                     className="gap-2 h-9"
                                     data-testid="create-event-btn"
@@ -159,11 +169,29 @@ export default function RFILayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto">
-                <div className="max-w-[1600px] mx-auto p-8">
-                    {children}
-                </div>
+            <main className={isFullEditor ? "flex-1 overflow-hidden flex flex-col" : "flex-1 overflow-y-auto"}>
+                {isFullEditor ? (
+                    children
+                ) : (
+                    <div className="max-w-[1600px] mx-auto p-8">
+                        {children}
+                    </div>
+                )}
             </main>
+
+            {/* Import Dialog */}
+            <RFIImportDialog
+                isOpen={importDialogOpen}
+                onClose={() => setImportDialogOpen(false)}
+                onImported={() => {
+                    setImportDialogOpen(false);
+                    // Refresh events count in the tab badge (import creates events)
+                    apiClient.get("/api/rfi/events").then((res: any) => {
+                        const list = (res as any).content || (Array.isArray(res) ? res : []);
+                        setCounts(prev => ({ ...prev, events: list.length }));
+                    }).catch(() => {});
+                }}
+            />
         </div>
     );
 }

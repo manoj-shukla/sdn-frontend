@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import type { RFIEvaluation, RFIEvaluationSupplier, SupplierEvaluationStatus, RFIAnswer, RFIAnswerValue } from "@/types/rfi";
+import { exportResponsesExcel } from "@/lib/rfi/export";
 
 const EVAL_STATUS_OPTIONS: { value: SupplierEvaluationStatus; label: string; icon: React.ReactNode }[] = [
     { value: "SHORTLISTED", label: "Shortlisted", icon: <Star className="h-3.5 w-3.5" /> },
@@ -181,7 +182,21 @@ export default function BuyerRFIEvaluationPage() {
                         </p>
                     </div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!evaluation || evaluation.suppliers.length === 0}
+                    onClick={() => {
+                        if (!evaluation) return;
+                        exportResponsesExcel(
+                            evaluation.rfiTitle ?? "RFI Evaluation",
+                            evaluation.suppliers,
+                            evaluation.sections,
+                            new Map() // no score weights on this page; responses page has full scoring
+                        );
+                        toast.success("Downloading evaluation report…");
+                    }}
+                >
                     <Download className="h-3.5 w-3.5 mr-1.5" /> Export
                 </Button>
             </div>
