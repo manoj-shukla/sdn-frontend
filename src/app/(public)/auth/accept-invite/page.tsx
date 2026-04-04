@@ -13,22 +13,24 @@ import apiClient from "@/lib/api/client";
 
 export default function AcceptInvitePage() {
     return (
-        <Card>
-            <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                    <Building2 className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-center">Complete Your Registration</CardTitle>
-            </CardHeader>
-            <React.Suspense fallback={
-                <CardContent className="py-12 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                    <p className="text-muted-foreground">Loading invitation...</p>
-                </CardContent>
-            }>
-                <AcceptInviteContent />
-            </React.Suspense>
-        </Card>
+        <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4 py-10">
+            <Card className="w-full max-w-lg shadow-md">
+                <CardHeader>
+                    <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                        <Building2 className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-center">Complete Your Registration</CardTitle>
+                </CardHeader>
+                <React.Suspense fallback={
+                    <CardContent className="py-12 text-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading invitation...</p>
+                    </CardContent>
+                }>
+                    <AcceptInviteContent />
+                </React.Suspense>
+            </Card>
+        </div>
     );
 }
 
