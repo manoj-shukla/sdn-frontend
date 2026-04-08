@@ -113,6 +113,22 @@ export default function BuyerRFIDashboardPage() {
     const [statusFilter, setStatusFilter] = useState<RFIEventStatus | "ALL">("ALL");
     const [categoryFilter, setCategoryFilter] = useState("All Categories");
     const [page, setPage] = useState(1);
+    const [viewRfpLoading, setViewRfpLoading] = useState<string | null>(null);
+
+    const handleViewRFP = async (rfiId: string) => {
+        setViewRfpLoading(rfiId);
+        try {
+            const result = await apiClient.post(`/api/rfi/events/${rfiId}/convert-to-rfp`) as any;
+            const rfpDraft = result?.rfpDraft || result;
+            const rfpId = rfpDraft?.rfpId;
+            router.push(rfpId ? `/buyer/rfp/${rfpId}` : `/buyer/rfp`);
+        } catch {
+            // Fallback: go to RFP list
+            router.push(`/buyer/rfp`);
+        } finally {
+            setViewRfpLoading(null);
+        }
+    };
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -381,13 +397,13 @@ export default function BuyerRFIDashboardPage() {
                                                                 >
                                                                     <Eye className="h-3.5 w-3.5" />
                                                                 </Button>
-                                                                {event.status === "OPEN" && (
+                                                                {(event.status === "OPEN" || event.status === "CLOSED") && (
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
                                                                         className="h-7 w-7 text-violet-600 hover:text-violet-600"
-                                                                        title="Promote to RFP"
-                                                                        onClick={() => toast.info("Promote to RFP")}
+                                                                        title={event.status === "OPEN" ? "Close RFI first, then promote to RFP" : "Promote to RFP"}
+                                                                        onClick={() => router.push(`/buyer/rfi/${event.rfiId || (event as any).id}`)}
                                                                     >
                                                                         <Rocket className="h-3.5 w-3.5" />
                                                                     </Button>
@@ -397,9 +413,13 @@ export default function BuyerRFIDashboardPage() {
                                                                         variant="outline"
                                                                         size="sm"
                                                                         className="h-7 text-xs gap-1"
-                                                                        onClick={() => toast.info("View RFP")}
+                                                                        disabled={viewRfpLoading === (event.rfiId || (event as any).id)}
+                                                                        onClick={() => handleViewRFP(event.rfiId || (event as any).id)}
                                                                     >
-                                                                        <ArrowRightCircle className="h-3 w-3" /> View RFP
+                                                                        {viewRfpLoading === (event.rfiId || (event as any).id)
+                                                                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                                                                            : <ArrowRightCircle className="h-3 w-3" />
+                                                                        } View RFP
                                                                     </Button>
                                                                 )}
                                                             </>

@@ -46,6 +46,8 @@ export function Sidebar() {
     const [isHovered, setIsHovered] = useState(false);
     const [onboardingCount, setOnboardingCount] = useState(0);
     const [activeRfiCount, setActiveRfiCount] = useState(0);
+    const [supplierRfiCount, setSupplierRfiCount] = useState(0);
+    const [supplierRfpCount, setSupplierRfpCount] = useState(0);
 
     const { role: contextRole } = useBuyerRole();
     const [isMobile, setIsMobile] = useState(false);
@@ -85,18 +87,32 @@ export function Sidebar() {
 
     useEffect(() => {
         const fetchCounts = async () => {
-            if (!user || user.role.toUpperCase() !== "BUYER") return;
-            try {
-                const [onboardingRes, rfiRes] = await Promise.allSettled([
-                    apiClient.get('/api/approvals/count'),
-                    apiClient.get('/api/rfi/events/active-count')
-                ]);
+            if (!user) return;
+            const role = user.role.toUpperCase();
 
-                if (onboardingRes.status === 'fulfilled') {
-                    setOnboardingCount((onboardingRes.value as any).data?.count || 0);
-                }
-                if (rfiRes.status === 'fulfilled') {
-                    setActiveRfiCount((rfiRes.value as any).data?.count || 0);
+            try {
+                if (role === "BUYER") {
+                    const [onboardingRes, rfiRes] = await Promise.allSettled([
+                        apiClient.get('/api/approvals/count'),
+                        apiClient.get('/api/rfi/events/active-count')
+                    ]);
+                    if (onboardingRes.status === 'fulfilled') {
+                        setOnboardingCount((onboardingRes.value as any)?.count || 0);
+                    }
+                    if (rfiRes.status === 'fulfilled') {
+                        setActiveRfiCount((rfiRes.value as any)?.count || 0);
+                    }
+                } else if (role === "SUPPLIER") {
+                    const [rfiCountRes, rfpCountRes] = await Promise.allSettled([
+                        apiClient.get('/api/rfi/invitations/count'),
+                        apiClient.get('/api/rfp/my/invitations/count')
+                    ]);
+                    if (rfiCountRes.status === 'fulfilled') {
+                        setSupplierRfiCount((rfiCountRes.value as any)?.count || 0);
+                    }
+                    if (rfpCountRes.status === 'fulfilled') {
+                        setSupplierRfpCount((rfpCountRes.value as any)?.count || 0);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch sidebar counts:", error);
@@ -351,6 +367,10 @@ export function Sidebar() {
                                                         ? onboardingCount
                                                         : item.title === "RFI Events"
                                                         ? activeRfiCount
+                                                        : item.title === "RFI Inbox"
+                                                        ? supplierRfiCount
+                                                        : item.title === "RFP Invitations"
+                                                        ? supplierRfpCount
                                                         : undefined;
                                                 return (
                                                     <NavLink

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,9 @@ import {
     MapPin,
     LogOut,
     Menu,
-    ShieldCheck
+    ShieldCheck,
+    ClipboardList,
+    Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import apiClient from "@/lib/api/client";
@@ -24,19 +26,43 @@ type ViewParams = 'analytics' | 'profile' | 'bank' | 'tax' | 'address' | 'contac
 
 export function ApprovedSupplierDashboard({ supplierData }: { supplierData: any }) {
     const [stats, setStats] = useState({
+        openRfis: 0,
         openRfqs: 0,
         activeOrders: 0,
+        complianceScore: 0,
         pendingInvoicesValue: 0,
         expiringDocs: 0,
-        complianceScore: 0
     });
     const [loading, setLoading] = useState(true);
 
-    useState(() => {
+    useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await apiClient.get('/api/analytics/supplier/summary') as any;
-                if (res) setStats(res);
+                const [analyticsRes, rfiCountRes, rfpCountRes] = await Promise.allSettled([
+                    apiClient.get('/api/analytics/supplier/summary'),
+                    apiClient.get('/api/rfi/invitations/count'),
+                    apiClient.get('/api/rfp/my/invitations/count'),
+                ]);
+
+                setStats(prev => {
+                    const next = { ...prev };
+
+                    if (analyticsRes.status === 'fulfilled') {
+                        const a = analyticsRes.value as any;
+                        // Map analytics field names → dashboard state names
+                        next.activeOrders    = Number(a?.totalOrders   ?? 0);
+                        next.complianceScore = Number(a?.avgCompliance  ?? 0);
+                        next.pendingInvoicesValue = Number(a?.totalSpent ?? 0);
+                    }
+                    if (rfiCountRes.status === 'fulfilled') {
+                        next.openRfis = Number((rfiCountRes.value as any)?.count ?? 0);
+                    }
+                    if (rfpCountRes.status === 'fulfilled') {
+                        next.openRfqs = Number((rfpCountRes.value as any)?.count ?? 0);
+                    }
+
+                    return next;
+                });
             } catch (e) {
                 console.error("Failed to load supplier stats", e);
             } finally {
@@ -44,7 +70,7 @@ export function ApprovedSupplierDashboard({ supplierData }: { supplierData: any 
             }
         };
         fetchStats();
-    });
+    }, []);
 
     const formatCurrency = (val: number | null | undefined) => {
         if (val == null || isNaN(val)) return '₹0';
@@ -84,8 +110,9 @@ export function ApprovedSupplierDashboard({ supplierData }: { supplierData: any 
                             {supplierData.legalName} — Supplier Dashboard
                         </h1>
                         <p className="text-blue-100 max-w-2xl text-sm leading-relaxed">
-                            You have <span className="font-bold text-white">{stats.openRfqs} open RFQs</span> to respond to,
-                            <span className="font-bold text-white"> {stats.activeOrders} active orders</span>,
+                            You have <span className="font-bold text-white">{stats.openRfis} open RFI{stats.openRfis !== 1 ? "s" : ""}</span> and{" "}
+                            <span className="font-bold text-white">{stats.openRfqs} open RFP/RFQ{stats.openRfqs !== 1 ? "s" : ""}</span> awaiting response,{" "}
+                            <span className="font-bold text-white">{stats.activeOrders} active orders</span>,
                             and your compliance score is <span className="font-bold text-white">{stats.complianceScore}%</span>.
                             Keep up the great work!
                         </p>
@@ -107,14 +134,34 @@ export function ApprovedSupplierDashboard({ supplierData }: { supplierData: any 
             </div>
 
             {/* Metric Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard
-                    title="Open RFQs"
-                    value={stats.openRfqs}
-                    subtext="Awaiting response"
-                    icon={FileText}
-                    colorClass="bg-blue-100"
-                />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <Link href="/supplier/rfi">
+                    <MetricCard
+                        title="Open RFIs"
+                        value={stats.openRfis}
+                        subtext="Pending response"
+                        icon={ClipboardList}
+                        colorClass="bg-indigo-100"
+                    />
+                </Link>
+                <Link href="/supplier/rfp">
+                    <MetricCard
+                        title="Open RFPs"
+                        value={stats.openRfqs}
+                        subtext="Awaiting quote"
+                        icon={FileText}
+                        colorClass="bg-blue-100"
+                    />
+                </Link>
+                <Link href="/supplier/awards">
+                    <MetricCard
+                        title="Awards"
+                        value="View"
+                        subtext="Awarded contracts"
+                        icon={Trophy}
+                        colorClass="bg-violet-100"
+                    />
+                </Link>
                 <MetricCard
                     title="Active Orders"
                     value={stats.activeOrders}
@@ -145,22 +192,65 @@ export function ApprovedSupplierDashboard({ supplierData }: { supplierData: any 
                     <Card className="border-none shadow-sm h-full">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <div>
-                                <CardTitle className="text-base">Open RFQs / RFPs — Action Required</CardTitle>
+                                <CardTitle className="text-base">Action Required</CardTitle>
                                 <CardDescription className="text-xs mt-1">
-                                    {stats.openRfqs > 0 ? `${stats.openRfqs} events open for bidding` : 'No events currently open'}
+                                    {(stats.openRfis + stats.openRfqs) > 0
+                                        ? `${stats.openRfis + stats.openRfqs} event${stats.openRfis + stats.openRfqs !== 1 ? 's' : ''} awaiting your response`
+                                        : 'No pending actions at the moment'}
                                 </CardDescription>
                             </div>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            {stats.openRfqs > 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <p>You have {stats.openRfqs} open RFQs requiring attention.</p>
+                        <CardContent className="space-y-3">
+                            {/* RFI row */}
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-50 border border-indigo-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                        <ClipboardList className="h-4 w-4 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-800">Open RFIs</p>
+                                        <p className="text-xs text-muted-foreground">Information requests pending response</p>
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <p>No open RFQs at the moment.</p>
+                                <div className="flex items-center gap-3">
+                                    <span className={cn(
+                                        "text-2xl font-bold",
+                                        stats.openRfis > 0 ? "text-indigo-600" : "text-slate-400"
+                                    )}>
+                                        {stats.openRfis}
+                                    </span>
+                                    <Link href="/supplier/rfi">
+                                        <Button size="sm" variant="outline" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                                            View →
+                                        </Button>
+                                    </Link>
                                 </div>
-                            )}
+                            </div>
+                            {/* RFP row */}
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <FileText className="h-4 w-4 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-800">Open RFPs / RFQs</p>
+                                        <p className="text-xs text-muted-foreground">Sourcing events awaiting your quote</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className={cn(
+                                        "text-2xl font-bold",
+                                        stats.openRfqs > 0 ? "text-blue-600" : "text-slate-400"
+                                    )}>
+                                        {stats.openRfqs}
+                                    </span>
+                                    <Link href="/supplier/rfp">
+                                        <Button size="sm" variant="outline" className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50">
+                                            View →
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 

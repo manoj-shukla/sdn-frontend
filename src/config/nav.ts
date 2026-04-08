@@ -112,6 +112,7 @@ export const navConfig: Record<string, NavConfigGroup> = {
             category: "SOURCING",
             items: [
                 { title: "RFI Inbox", href: "/supplier/rfi", icon: ClipboardList },
+                { title: "RFP Invitations", href: "/supplier/rfp", icon: FileText },
                 { title: "Open RFQs", href: "/supplier/rfqs", icon: FileText },
                 { title: "My Bids", href: "/supplier/bids", icon: Hammer },
                 { title: "Awards", href: "/supplier/awards", icon: Trophy },

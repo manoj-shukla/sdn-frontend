@@ -89,10 +89,24 @@ export default function BuyerRFIEventDetailPage() {
     const handleConvertToRFP = async () => {
         setActionLoading(true);
         try {
-            await apiClient.post(`/api/rfi/events/${id}/convert-to-rfp`);
-            toast.success("RFI converted to RFP successfully.");
+            const result = await apiClient.post(`/api/rfi/events/${id}/convert-to-rfp`) as any;
+            const rfpDraft = result?.rfpDraft || result;
+            const newRfpId = rfpDraft?.rfpId;
+            const supplierCount = rfpDraft?.totalShortlisted;
+            if (supplierCount != null) {
+                toast.success(
+                    `RFI converted — RFP draft created with ${supplierCount} pre-invited supplier${supplierCount !== 1 ? 's' : ''}.`
+                );
+            } else {
+                toast.success("Navigating to linked RFP…");
+            }
             setConvertDialogOpen(false);
-            router.push(`/buyer/rfp`);
+            // Redirect to the RFP (new or recovered)
+            if (newRfpId) {
+                router.push(`/buyer/rfp/${newRfpId}`);
+            } else {
+                router.push(`/buyer/rfp`);
+            }
         } catch {
             toast.error("Failed to convert to RFP.");
         } finally {
@@ -215,9 +229,48 @@ export default function BuyerRFIEventDetailPage() {
                             <XCircle className="h-4 w-4 mr-1.5" /> Close RFI
                         </Button>
                     )}
-                    {event.status === "CLOSED" && shortlistedCount > 0 && (
-                        <Button data-testid="convert-to-rfp-btn" size="sm" onClick={() => setConvertDialogOpen(true)}>
-                            <GitBranch className="h-4 w-4 mr-1.5" /> Convert to RFP
+                    {/* Convert to RFP — visible for OPEN/CLOSED, disabled until conditions met */}
+                    {(event.status === "OPEN" || event.status === "CLOSED") && (() => {
+                        const notClosed   = event.status !== "CLOSED";
+                        const noShortlist = shortlistedCount === 0;
+                        const canPromote  = !notClosed && !noShortlist;
+                        const hint = notClosed
+                            ? "Close the RFI first"
+                            : noShortlist
+                            ? "Shortlist at least 1 supplier"
+                            : null;
+                        return (
+                            <div
+                                className="flex flex-col items-end gap-0.5"
+                                title={hint ?? undefined}
+                            >
+                                <Button
+                                    data-testid="convert-to-rfp-btn"
+                                    size="sm"
+                                    disabled={!canPromote}
+                                    onClick={() => canPromote && setConvertDialogOpen(true)}
+                                    className={!canPromote ? "opacity-50 cursor-not-allowed" : ""}
+                                >
+                                    <GitBranch className="h-4 w-4 mr-1.5" /> Convert to RFP
+                                </Button>
+                                {hint && (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />{hint}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })()}
+                    {/* Already converted — show View RFP button (triggers recovery if RFP row missing) */}
+                    {event.status === "CONVERTED" && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={actionLoading}
+                            onClick={handleConvertToRFP}
+                        >
+                            {actionLoading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <GitBranch className="h-4 w-4 mr-1.5" />}
+                            View RFP
                         </Button>
                     )}
                     {/* Responses now live in the global Responses page */}

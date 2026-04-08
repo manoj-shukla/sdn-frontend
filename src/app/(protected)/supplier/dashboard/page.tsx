@@ -115,10 +115,14 @@ function SupplierDashboardContent() {
                     routingNumber: supRes.routingNumber || supRes.routingnumber
                 });
 
-                // Fetch and match documents
-                // Note: apiClient interceptor returns response.data directly (not an axios response)
-                const docsRaw = await apiClient.get<any[]>(`/api/suppliers/${meRes.supplierId}/documents`) as any;
-                const apiDocs: any[] = Array.isArray(docsRaw) ? docsRaw : (docsRaw?.data || docsRaw || []);
+                // Fetch and match documents (non-fatal — dashboard still loads if this fails)
+                let apiDocs: any[] = [];
+                try {
+                    const docsRaw = await apiClient.get<any[]>(`/api/suppliers/${meRes.supplierId}/documents`) as any;
+                    apiDocs = Array.isArray(docsRaw) ? docsRaw : (docsRaw?.data || docsRaw || []);
+                } catch {
+                    // Documents endpoint temporarily unavailable — skip silently
+                }
 
                 if (Array.isArray(apiDocs)) {
                     const store = useSupplierOnboardingStore.getState();

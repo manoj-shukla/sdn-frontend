@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import apiClient from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -171,10 +171,12 @@ function ScoreBar({ score, className = "" }: { score: number | null; className?:
 
 function RFIResponsesPageInner() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const preselectedEventId = searchParams.get("eventId") ?? "";
 
     const [events, setEvents] = useState<RFIEvent[]>([]);
     const [eventsLoading, setEventsLoading] = useState(true);
+    const [promoteLoading, setPromoteLoading] = useState(false);
     const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId);
     const [evaluation, setEvaluation] = useState<RFIEvaluation | null>(null);
     const [evalLoading, setEvalLoading] = useState(false);
@@ -350,6 +352,39 @@ function RFIResponsesPageInner() {
             toast.error("Failed to update shortlist status");
         }
     }, [selectedEventId]);
+
+    // ── Promote to RFP ───────────────────────────────────────────────────────
+    const handlePromoteToRFP = useCallback(async () => {
+        if (!selectedEventId || !selectedEvent) return;
+        setPromoteLoading(true);
+        try {
+            // If RFI is still OPEN, close it first before converting
+            if (selectedEvent.status === "OPEN") {
+                await apiClient.post(`/api/rfi/events/${selectedEventId}/close`);
+                // Update local event status so UI reflects the change
+                setEvents(prev => prev.map(e =>
+                    String(e.rfiId) === selectedEventId ? { ...e, status: "CLOSED" as any } : e
+                ));
+            }
+            // Now convert to RFP
+            const result = await apiClient.post(`/api/rfi/events/${selectedEventId}/convert-to-rfp`) as any;
+            const rfpDraft = result?.rfpDraft || result;
+            const newRfpId = rfpDraft?.rfpId;
+            const supplierCount = rfpDraft?.totalShortlisted ?? 0;
+            toast.success(
+                `RFP draft created with ${supplierCount} pre-invited supplier${supplierCount !== 1 ? "s" : ""}. Redirecting…`
+            );
+            // Navigate to the new RFP so buyer can complete and publish it
+            setTimeout(() => {
+                router.push(newRfpId ? `/buyer/rfp/${newRfpId}` : `/buyer/rfp`);
+            }, 800);
+        } catch (err: any) {
+            const msg = err?.response?.data?.error || err?.message || "Failed to promote to RFP";
+            toast.error(msg);
+        } finally {
+            setPromoteLoading(false);
+        }
+    }, [selectedEventId, selectedEvent, router]);
 
     // ── Save note ─────────────────────────────────────────────────────────────
     const saveNote = async () => {
@@ -948,9 +983,26 @@ function RFIResponsesPageInner() {
                                                 <Star className="h-4 w-4 text-amber-500" />
                                                 Shortlisted for RFP ({shortlistedSuppliers.length})
                                             </CardTitle>
-                                            <Button size="sm" className="gap-1.5 h-8" disabled={shortlistedSuppliers.length === 0}
-                                                onClick={() => toast.info("Promote to RFP — connect to your RFP module")}>
-                                                <Rocket className="h-3.5 w-3.5" /> Promote to RFP
+                                            <Button
+                                                size="sm"
+                                                className="gap-1.5 h-8"
+                                                disabled={shortlistedSuppliers.length === 0 || promoteLoading || selectedEvent?.status === "CONVERTED"}
+                                                onClick={handlePromoteToRFP}
+                                                title={
+                                                    selectedEvent?.status === "CONVERTED"
+                                                        ? "Already promoted to RFP"
+                                                        : shortlistedSuppliers.length === 0
+                                                        ? "Shortlist at least one supplier first"
+                                                        : selectedEvent?.status === "OPEN"
+                                                        ? "Will close RFI then create RFP draft"
+                                                        : "Create RFP draft from shortlisted suppliers"
+                                                }
+                                            >
+                                                {promoteLoading
+                                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                    : <Rocket className="h-3.5 w-3.5" />
+                                                }
+                                                {selectedEvent?.status === "CONVERTED" ? "Already Promoted" : "Promote to RFP"}
                                             </Button>
                                         </div>
                                     </CardHeader>
