@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 const changePasswordSchema = z.object({
-    newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    newPassword: z.string().min(1, "Password is required"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords don't match",
@@ -150,14 +150,6 @@ export default function LoginPage() {
                 authenticatedUser = mapBuyerResponseToProfile(user as BuyerApiResponse);
             }
 
-            if (authenticatedUser.mustChangePassword) {
-                setPendingUser(authenticatedUser);
-                setPendingToken(token);
-                setCurrentPassword(data.password);
-                setShowChangePassword(true);
-                return;
-            }
-
             document.cookie = `token=${token}; path=/; max-age=3600`;
             document.cookie = `role=${authenticatedUser.role || "BUYER"}; path=/; max-age=3600`;
             login(authenticatedUser as any);
@@ -175,10 +167,17 @@ export default function LoginPage() {
                 currentPassword,
                 newPassword: data.newPassword,
             });
-            document.cookie = `token=${pendingToken}; path=/; max-age=3600`;
-            document.cookie = `role=${pendingUser.role || "BUYER"}; path=/; max-age=3600`;
-            login(pendingUser as any);
-            redirectToRole(pendingUser);
+
+            // Refresh token so the new JWT reflects mustChangePassword: false from the DB
+            const refreshResult = await apiClient.post("/auth/refresh-token") as any;
+            const freshToken = refreshResult.token;
+            const freshUser = refreshResult.user;
+
+            localStorage.setItem("token", freshToken);
+            document.cookie = `token=${freshToken}; path=/; max-age=3600`;
+            document.cookie = `role=${freshUser.role || pendingUser.role || "BUYER"}; path=/; max-age=3600`;
+            login(freshUser as any);
+            redirectToRole(freshUser);
         } catch (err: any) {
             setChangeError(err.response?.data?.error || err.message || "Failed to change password");
         } finally {

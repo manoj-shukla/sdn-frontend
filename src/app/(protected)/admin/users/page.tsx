@@ -27,9 +27,9 @@ export default function AdminUsersPage() {
         try {
             setLoading(true);
             const res = await apiClient.get('/api/users') as any;
-            // Backend returns { userId, username, email, role, subRole }
-            // Map username to name and subRole to role for compatibility
-            const mappedUsers = res.map((u: any) => ({
+            // Backend returns paginated { users: [...], total, page, pageSize }
+            const userList: any[] = Array.isArray(res) ? res : (res.users || []);
+            const mappedUsers = userList.map((u: any) => ({
                 id: u.userId || u.userid,
                 name: u.username,
                 email: u.email,
