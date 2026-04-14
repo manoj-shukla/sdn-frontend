@@ -22,6 +22,23 @@ export interface RFP {
     submittedCount: number;
     items?: RFPItem[];
     suppliers?: RFPSupplier[];
+    // Section 1 enhancements
+    buRegion?: string;
+    incoterms?: string;
+    contactPerson?: string;
+    instructions?: string;
+    requireComplianceAck?: boolean;
+    // Section 2/6 — buyer certification gates
+    requireIso?: boolean;
+    requireGmp?: boolean;
+    requireFsc?: boolean;
+    minRevenueM?: number;
+    // Configurable scoring weights (must sum to 100)
+    weightCommercial?: number;
+    weightTechnical?: number;
+    weightQuality?: number;
+    weightLogistics?: number;
+    weightEsg?: number;
 }
 
 export interface RFPItem {
@@ -32,6 +49,8 @@ export interface RFPItem {
     quantity: number;
     unit?: string;
     specifications?: string;
+    targetPrice?: number;
+    targetPriceNote?: string;
     createdAt?: string;
 }
 
@@ -62,6 +81,13 @@ export interface ResponseItem {
     leadTime?: number;
     moq?: number;
     notes?: string;
+    // Section 4: cost breakdown
+    rawMaterialCost?: number;
+    conversionCost?: number;
+    laborCost?: number;
+    logisticsCost?: number;
+    overheadCost?: number;
+    supplierMargin?: number;
 }
 
 export interface ComparisonRow {

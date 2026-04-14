@@ -12,11 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import {
     ArrowLeft, Loader2, Send, Save, CheckCircle2, Package,
     AlertCircle, Calendar, Trophy, TrendingDown, TrendingUp,
-    RefreshCw, ChevronDown, ChevronUp, Minus
+    RefreshCw, ChevronDown, ChevronUp, Minus, ShieldCheck,
+    Truck, FileCheck, Leaf, DollarSign, BarChart3
 } from "lucide-react";
 import { toast } from "sonner";
 import type { RFP, RFPItem, SupplierResponse } from "@/types/rfp";
 import { cn } from "@/lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface NegotiationRound {
     roundId: string;
@@ -27,14 +30,12 @@ interface NegotiationRound {
     closedAt?: string;
     hasBid: boolean;
 }
-
 interface AwardInfo {
     awardId: string;
     allocationPct?: number;
     awardedValue?: number;
     createdAt: string;
 }
-
 interface RFPResponseData {
     rfp: RFP;
     inviteStatus: string | null;
@@ -42,6 +43,16 @@ interface RFPResponseData {
     negotiationRounds: NegotiationRound[];
     award: AwardInfo | null;
 }
+
+const RESPONSE_TABS = [
+    { id: "pricing", label: "Pricing", icon: BarChart3 },
+    { id: "cost",    label: "Cost Breakdown", icon: DollarSign },
+    { id: "qual",    label: "Qualification", icon: ShieldCheck },
+    { id: "logistics", label: "Logistics", icon: Truck },
+    { id: "quality", label: "Quality", icon: FileCheck },
+    { id: "esg",     label: "ESG", icon: Leaf },
+    { id: "terms",   label: "Terms", icon: DollarSign },
+];
 
 export default function SupplierRFPResponsePage() {
     const params = useParams();
@@ -52,17 +63,56 @@ export default function SupplierRFPResponsePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState("pricing");
 
-    // Response form state: itemId -> { price, leadTime, moq, notes }
+    // ── Section 4: Pricing (existing) ──────────────────────────────
     const [responseItems, setResponseItems] = useState<Record<string, {
         price: string; leadTime: string; moq: string; notes: string;
+        rawMaterialCost: string; conversionCost: string; laborCost: string;
+        logisticsCost: string; overheadCost: string; supplierMargin: string;
     }>>({});
     const [generalNotes, setGeneralNotes] = useState("");
 
-    // Negotiation bid state: itemId -> newPrice
+    // ── Section 2: Qualification ────────────────────────────────────
+    const [qual, setQual] = useState({
+        legalEntity: "", headquarters: "", annualRevenue: "", employees: "",
+        monthlyCapacity: "", certifications: [] as string[], majorClients: "", financialNotes: "",
+    });
+
+    // ── Section 5: Logistics ────────────────────────────────────────
+    const [logistics, setLogistics] = useState({
+        deliveryTerms: "", warehouseLocations: "", transportMethod: "",
+        supplyCapacityMonthly: "", hasBackupSupplier: false,
+    });
+
+    // ── Section 6: Quality & Compliance ────────────────────────────
+    const [quality, setQuality] = useState({
+        isoCertified: false, gmpCertified: false, fscCertified: false,
+        otherCertifications: "", inspectionProcess: "", traceabilitySystem: "",
+        defectRatePct: "", auditReportUrl: "", qualityManualUrl: "",
+    });
+
+    // ── Section 7: ESG ──────────────────────────────────────────────
+    const [esg, setEsg] = useState({
+        recycledContentPct: "", carbonFootprintKg: "", renewableEnergyPct: "",
+        packagingReductionInitiative: "", esgPolicies: "",
+    });
+
+    // ── Section 8: Commercial Terms ─────────────────────────────────
+    const [terms, setTerms] = useState({
+        paymentTerms: "", priceValidityDays: "", acceptsPenaltyClauses: false,
+        commodityIndexLinkage: "", generalTermsAccepted: false, termsNotes: "",
+    });
+
+    // ── Compliance Ack ──────────────────────────────────────────────
+    const [complianceAckAccepted, setComplianceAckAccepted] = useState(false);
+
+    // ── Negotiation ─────────────────────────────────────────────────
     const [negBidItems, setNegBidItems] = useState<Record<string, string>>({});
     const [submittingNegBid, setSubmittingNegBid] = useState(false);
     const [expandedRound, setExpandedRound] = useState<string | null>(null);
+
+    // ── Fetch ────────────────────────────────────────────────────────
 
     const fetchData = async (silent = false) => {
         try {
@@ -79,508 +129,297 @@ export default function SupplierRFPResponsePage() {
                         leadTime: ri.leadTime != null ? String(ri.leadTime) : "",
                         moq: ri.moq != null ? String(ri.moq) : "",
                         notes: ri.notes || "",
+                        rawMaterialCost: ri.rawMaterialCost != null ? String(ri.rawMaterialCost) : "",
+                        conversionCost: ri.conversionCost != null ? String(ri.conversionCost) : "",
+                        laborCost: ri.laborCost != null ? String(ri.laborCost) : "",
+                        logisticsCost: ri.logisticsCost != null ? String(ri.logisticsCost) : "",
+                        overheadCost: ri.overheadCost != null ? String(ri.overheadCost) : "",
+                        supplierMargin: ri.supplierMargin != null ? String(ri.supplierMargin) : "",
                     };
                 }
                 setResponseItems(prefilledItems);
-                // Pre-fill negotiation bid with current prices as starting point
-                const negPrices: Record<string, string> = {};
-                for (const ri of res.response.items || []) {
-                    if (ri.price != null) negPrices[ri.itemId] = String(ri.price);
-                }
-                setNegBidItems(negPrices);
-            } else if (res.rfp.items) {
-                const emptyItems: typeof responseItems = {};
-                for (const item of res.rfp.items) {
-                    emptyItems[item.itemId] = { price: "", leadTime: "", moq: "", notes: "" };
-                }
-                setResponseItems(emptyItems);
             }
 
-            // Auto-expand the active negotiation round if no bid yet
+            // Pre-fill neg bids
             const openRound = (res.negotiationRounds || []).find((r: NegotiationRound) => r.status === "OPEN");
-            if (openRound && !openRound.hasBid) {
-                setExpandedRound(openRound.roundId);
-            }
-        } catch {
-            toast.error("Failed to load RFP");
-        } finally {
-            if (!silent) setLoading(false);
-        }
+            if (openRound && !openRound.hasBid) setExpandedRound(openRound.roundId);
+
+        } catch { toast.error("Failed to load RFP"); }
+        finally { setLoading(false); }
     };
 
     useEffect(() => { fetchData(); }, [rfpId]);
 
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    const getItem = (itemId: string) => responseItems[itemId] || {
+        price: "", leadTime: "", moq: "", notes: "",
+        rawMaterialCost: "", conversionCost: "", laborCost: "",
+        logisticsCost: "", overheadCost: "", supplierMargin: "",
+    };
+
+    const updateItem = (itemId: string, field: string, value: string) => {
+        setResponseItems(prev => ({ ...prev, [itemId]: { ...getItem(itemId), [field]: value } }));
+    };
+
     const buildPayload = () => ({
-        notes: generalNotes || undefined,
-        items: Object.entries(responseItems).map(([itemId, vals]) => ({
-            itemId,
-            price: vals.price ? parseFloat(vals.price) : undefined,
-            leadTime: vals.leadTime ? parseInt(vals.leadTime) : undefined,
-            moq: vals.moq ? parseFloat(vals.moq) : undefined,
-            notes: vals.notes || undefined,
-        })).filter(i => i.price !== undefined || i.leadTime !== undefined || i.moq !== undefined),
+        notes: generalNotes,
+        complianceAckAccepted,
+        items: (data?.rfp?.items || []).map((item: RFPItem) => {
+            const ri = getItem(item.itemId);
+            return {
+                itemId: item.itemId,
+                price: ri.price ? parseFloat(ri.price) : null,
+                leadTime: ri.leadTime ? parseInt(ri.leadTime) : null,
+                moq: ri.moq ? parseFloat(ri.moq) : null,
+                notes: ri.notes || null,
+                rawMaterialCost: ri.rawMaterialCost ? parseFloat(ri.rawMaterialCost) : null,
+                conversionCost: ri.conversionCost ? parseFloat(ri.conversionCost) : null,
+                laborCost: ri.laborCost ? parseFloat(ri.laborCost) : null,
+                logisticsCost: ri.logisticsCost ? parseFloat(ri.logisticsCost) : null,
+                overheadCost: ri.overheadCost ? parseFloat(ri.overheadCost) : null,
+                supplierMargin: ri.supplierMargin ? parseFloat(ri.supplierMargin) : null,
+            };
+        }),
     });
+
+    // ── Save handlers ────────────────────────────────────────────────
 
     const handleSaveDraft = async () => {
         setSaving(true);
         try {
             await apiClient.post(`/api/rfp/${rfpId}/response/draft`, buildPayload());
-            toast.success("Draft saved.");
-            fetchData(true);
-        } catch (err: any) {
-            toast.error(err?.response?.data?.error || "Failed to save draft");
-        } finally {
-            setSaving(false);
-        }
+            toast.success("Draft saved");
+        } catch (e: any) { toast.error(e?.message || "Save failed"); }
+        finally { setSaving(false); }
+    };
+
+    const handleSaveQual = async () => {
+        try {
+            await apiClient.post(`/api/rfp/${rfpId}/response/qualification`, qual);
+            toast.success("Qualification saved");
+        } catch (e: any) { toast.error(e?.message || "Failed"); }
+    };
+
+    const handleSaveLogistics = async () => {
+        try {
+            await apiClient.post(`/api/rfp/${rfpId}/response/logistics`, logistics);
+            toast.success("Logistics saved");
+        } catch (e: any) { toast.error(e?.message || "Failed"); }
+    };
+
+    const handleSaveQuality = async () => {
+        try {
+            await apiClient.post(`/api/rfp/${rfpId}/response/quality`, quality);
+            toast.success("Quality & compliance saved");
+        } catch (e: any) { toast.error(e?.message || "Failed"); }
+    };
+
+    const handleSaveESG = async () => {
+        try {
+            await apiClient.post(`/api/rfp/${rfpId}/response/esg`, esg);
+            toast.success("ESG data saved");
+        } catch (e: any) { toast.error(e?.message || "Failed"); }
+    };
+
+    const handleSaveTerms = async () => {
+        try {
+            await apiClient.post(`/api/rfp/${rfpId}/response/terms`, terms);
+            toast.success("Commercial terms saved");
+        } catch (e: any) { toast.error(e?.message || "Failed"); }
     };
 
     const handleSubmit = async () => {
-        const payload = buildPayload();
-        const hasPrice = payload.items.some(i => i.price !== undefined);
-        if (!hasPrice) {
-            toast.error("Please enter a price for at least one line item.");
-            return;
-        }
-        if (!confirm("Submit your quote? You will not be able to edit it after submission.")) return;
         setSubmitting(true);
         try {
             await apiClient.post(`/api/rfp/${rfpId}/response/submit`, buildPayload());
-            toast.success("Quote submitted successfully!");
+            toast.success("Response submitted!");
             fetchData(true);
-        } catch (err: any) {
-            toast.error(err?.response?.data?.error || "Failed to submit quote");
-        } finally {
-            setSubmitting(false);
-        }
+        } catch (e: any) { toast.error(e?.message || "Submission failed"); }
+        finally { setSubmitting(false); }
     };
 
-    const handleSubmitNegBid = async (roundId: string) => {
-        const items = Object.entries(negBidItems)
-            .filter(([, v]) => v !== "")
-            .map(([itemId, newPrice]) => ({ itemId, newPrice: parseFloat(newPrice) }));
-        if (items.length === 0) {
-            toast.error("Enter revised prices for at least one item.");
-            return;
-        }
+    const handleAcceptInvitation = async (action: "accept" | "decline") => {
+        try {
+            await apiClient.post(`/api/rfp/${rfpId}/invitation/respond`, { action });
+            toast.success(action === "accept" ? "Invitation accepted!" : "Invitation declined.");
+            fetchData(true);
+        } catch { toast.error("Failed to respond"); }
+    };
+
+    const handleNegotiationBid = async (roundId: string) => {
         setSubmittingNegBid(true);
         try {
+            const items = Object.entries(negBidItems)
+                .filter(([, price]) => price !== "")
+                .map(([itemId, price]) => ({ itemId, newPrice: parseFloat(price) }));
             await apiClient.post(`/api/rfp/${rfpId}/negotiation/${roundId}/bid`, { roundId, items });
-            toast.success("Revised bid submitted!");
+            toast.success("Negotiation bid submitted!");
             fetchData(true);
-        } catch (err: any) {
-            toast.error(err?.response?.data?.error || "Failed to submit bid");
-        } finally {
-            setSubmittingNegBid(false);
-        }
+        } catch (e: any) { toast.error(e?.message || "Failed to submit bid"); }
+        finally { setSubmittingNegBid(false); }
     };
 
-    const updateItemField = (itemId: string, field: string, value: string) => {
-        setResponseItems(prev => ({ ...prev, [itemId]: { ...prev[itemId], [field]: value } }));
-    };
+    // ── Render ────────────────────────────────────────────────────────────────
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
     );
+    if (!data) return <div className="text-center py-16 text-muted-foreground">RFP not found.</div>;
 
-    if (!data) return (
-        <div className="text-center py-16 text-muted-foreground">
-            <p>RFP not found or you are not invited.</p>
-            <Button variant="link" onClick={() => router.push("/supplier/rfp")}>Back to RFPs</Button>
-        </div>
-    );
-
-    const { rfp, response, negotiationRounds, award } = data;
+    const { rfp, inviteStatus, response, negotiationRounds, award } = data;
     const isSubmitted = response?.status === "SUBMITTED";
     const isOpen = rfp.status === "OPEN";
-    const daysLeft = rfp.deadline ? Math.ceil((new Date(rfp.deadline).getTime() - Date.now()) / 86400000) : null;
-    const isExpired = daysLeft !== null && daysLeft <= 0;
     const openRound = negotiationRounds.find(r => r.status === "OPEN");
+    const currency = rfp.currency || "USD";
 
-    const totalQuoted = Object.values(responseItems).reduce((acc, r) => {
-        const p = parseFloat(r.price);
-        return acc + (isNaN(p) ? 0 : p);
-    }, 0);
+    const statusColors: Record<string, string> = {
+        DRAFT: "bg-slate-100 text-slate-700",
+        OPEN: "bg-emerald-100 text-emerald-700",
+        CLOSED: "bg-orange-100 text-orange-700",
+        AWARDED: "bg-violet-100 text-violet-700",
+        ARCHIVED: "bg-gray-100 text-gray-700",
+    };
 
     return (
-        <div className="w-full space-y-6">
-            {/* ── Header ── */}
-            <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => router.push("/supplier/rfp")}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl font-bold text-slate-900">{rfp.name}</h1>
-                        <Badge variant="outline" className={cn("text-[11px]",
-                            rfp.status === "OPEN" ? "bg-green-100 text-green-700" :
-                            rfp.status === "AWARDED" ? "bg-violet-100 text-violet-700" :
-                            "bg-amber-100 text-amber-700"
-                        )}>
-                            {rfp.status}
-                        </Badge>
-                        {isSubmitted && !award && (
-                            <Badge className="bg-green-600 text-white text-[11px] gap-1">
-                                <CheckCircle2 className="h-3 w-3" /> Submitted
-                            </Badge>
-                        )}
-                        {award && (
-                            <Badge className="bg-violet-600 text-white text-[11px] gap-1">
-                                <Trophy className="h-3 w-3" /> Awarded
-                            </Badge>
-                        )}
+        <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <button onClick={() => router.push("/supplier/rfp")}
+                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                        <ArrowLeft className="h-4 w-4" /> Back to RFPs
+                    </button>
+                    <h1 className="text-2xl font-bold text-slate-900">{rfp.name}</h1>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <Badge className={cn("text-xs", statusColors[rfp.status] || "bg-slate-100")}>{rfp.status}</Badge>
+                        {rfp.category && <Badge variant="outline" className="text-xs">{rfp.category}</Badge>}
+                        {rfp.incoterms && <Badge variant="outline" className="text-xs">{rfp.incoterms}</Badge>}
+                        {rfp.buRegion && <span className="text-xs text-muted-foreground">{rfp.buRegion}</span>}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                        <span>{rfp.currency}</span>
-                        {rfp.category && <><span>•</span><span>{rfp.category}</span></>}
-                        {rfp.deadline && (
-                            <>
-                                <span>•</span>
-                                <span className={cn("flex items-center gap-1", isExpired ? "text-rose-500" : daysLeft !== null && daysLeft < 3 ? "text-amber-600" : "")}>
-                                    <Calendar className="h-3 w-3" />
-                                    Deadline: {new Date(rfp.deadline).toLocaleDateString()}
-                                    {daysLeft !== null && !isExpired && <span>({daysLeft}d left)</span>}
-                                    {isExpired && <span>(Expired)</span>}
-                                </span>
-                            </>
-                        )}
+                </div>
+                <div className="text-right text-xs text-muted-foreground shrink-0">
+                    <div className="flex items-center gap-1 justify-end">
+                        <Calendar className="h-3 w-3" />
+                        Deadline: {new Date(rfp.deadline).toLocaleDateString()}
                     </div>
+                    {rfp.currency && <div className="mt-0.5">{rfp.currency}</div>}
                 </div>
             </div>
 
-            {rfp.description && (
-                <div className="bg-slate-50 rounded-lg px-4 py-3 text-sm text-slate-600">{rfp.description}</div>
+            {/* Instructions banner */}
+            {rfp.instructions && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 text-sm text-indigo-800">
+                    <strong className="block mb-0.5">Supplier Instructions</strong>
+                    {rfp.instructions}
+                </div>
             )}
 
-            {/* ── Award Banner ── */}
+            {/* Compliance ack — interactive gate */}
+            {rfp.requireComplianceAck && !isSubmitted && inviteStatus === "ACCEPTED" && (
+                <div className={cn(
+                    "border rounded-lg px-4 py-3 text-sm flex items-start gap-3",
+                    complianceAckAccepted
+                        ? "bg-green-50 border-green-200 text-green-800"
+                        : "bg-amber-50 border-amber-200 text-amber-800"
+                )}>
+                    <input
+                        type="checkbox"
+                        id="complianceAckChk"
+                        checked={complianceAckAccepted}
+                        onChange={e => setComplianceAckAccepted(e.target.checked)}
+                        className="h-4 w-4 mt-0.5 shrink-0 rounded border-amber-400 accent-indigo-600"
+                    />
+                    <label htmlFor="complianceAckChk" className="cursor-pointer">
+                        <strong className="block mb-0.5">
+                            {complianceAckAccepted ? "✓ Compliance Acknowledged" : "Compliance Acknowledgement Required"}
+                        </strong>
+                        <span className="text-xs">
+                            I confirm that our organisation complies with all stated requirements and applicable regulations. This acknowledgement is required before submitting a response.
+                        </span>
+                    </label>
+                </div>
+            )}
+
+            {/* Award banner */}
             {award && (
-                <div className="flex items-start gap-3 bg-violet-50 border border-violet-200 rounded-lg px-4 py-3">
-                    <Trophy className="h-5 w-5 text-violet-600 flex-shrink-0 mt-0.5" />
+                <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-4 flex items-center gap-3">
+                    <Trophy className="h-6 w-6 text-violet-600" />
                     <div>
-                        <p className="font-semibold text-violet-700 text-sm">You have been awarded this RFP!</p>
+                        <p className="font-semibold text-violet-700 text-sm">🎉 You have been awarded this RFP!</p>
                         <p className="text-xs text-violet-600 mt-0.5">
                             {award.allocationPct != null && `Allocation: ${award.allocationPct}% · `}
-                            {award.awardedValue != null && `Value: ${rfp.currency} ${Number(award.awardedValue).toLocaleString()} · `}
+                            {award.awardedValue != null && `Value: ${currency} ${Number(award.awardedValue).toLocaleString()} · `}
                             {`Awarded on ${new Date(award.createdAt).toLocaleDateString()}`}
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* ── Status Banners ── */}
-            {isSubmitted && !award && (
-                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <div>
-                        <p className="font-semibold text-green-700 text-sm">Quote Submitted</p>
-                        <p className="text-xs text-green-600">
-                            Submitted on {response?.submittedAt ? new Date(response.submittedAt).toLocaleString() : "—"}.
-                            The buyer will review your response.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {!isOpen && !isSubmitted && !award && (
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-                    <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                    <p className="text-sm text-amber-700">This RFP is no longer accepting responses.</p>
-                </div>
-            )}
-
-            {isExpired && isOpen && !isSubmitted && (
-                <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3">
-                    <AlertCircle className="h-5 w-5 text-rose-600 flex-shrink-0" />
-                    <p className="text-sm text-rose-700">The submission deadline has passed.</p>
-                </div>
-            )}
-
-            {/* ── Open Negotiation Banner ── */}
-            {openRound && !openRound.hasBid && (
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3">
-                    <RefreshCw className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                    <div className="flex-1">
-                        <p className="font-semibold text-amber-700 text-sm">Negotiation Round {openRound.roundNumber} is open</p>
-                        <p className="text-xs text-amber-600">The buyer has requested revised pricing. Submit your updated bid below.</p>
-                    </div>
-                    <Button
-                        size="sm"
-                        className="h-8 bg-amber-600 hover:bg-amber-700 gap-1.5"
-                        onClick={() => setExpandedRound(openRound.roundId)}
-                    >
-                        <RefreshCw className="h-3.5 w-3.5" /> Revise Bid
+            {/* Invitation actions */}
+            {isOpen && !isSubmitted && !award && inviteStatus === "INVITED" && (
+                <div className="flex gap-3">
+                    <Button onClick={() => handleAcceptInvitation("accept")} className="bg-indigo-600 hover:bg-indigo-700 gap-1.5">
+                        <CheckCircle2 className="h-4 w-4" /> Accept Invitation
+                    </Button>
+                    <Button variant="outline" onClick={() => handleAcceptInvitation("decline")} className="text-red-500 hover:text-red-600">
+                        Decline
                     </Button>
                 </div>
             )}
 
-            {/* ── Line Items Response Form ── */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Package className="h-4 w-4 text-indigo-600" />
-                        Quote Line Items
-                    </CardTitle>
-                    {!isSubmitted && isOpen && (
-                        <p className="text-xs text-muted-foreground">Enter your pricing for each item. Price is required for submission.</p>
-                    )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {(rfp.items || []).map((item: RFPItem, idx: number) => {
-                        const vals = responseItems[item.itemId] || { price: "", leadTime: "", moq: "", notes: "" };
-                        return (
-                            <div key={item.itemId} className="border rounded-lg p-4 space-y-3 bg-slate-50">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <span className="font-semibold text-sm">{idx + 1}. {item.name}</span>
-                                        {item.description && <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>}
-                                        {item.specifications && <p className="text-xs text-slate-500 mt-0.5 italic">{item.specifications}</p>}
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <p className="text-sm font-medium">{item.quantity} {item.unit || ""}</p>
-                                        <p className="text-xs text-muted-foreground">requested</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div>
-                                        <Label className="text-xs">
-                                            Unit Price ({rfp.currency}) <span className="text-rose-500">*</span>
-                                        </Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={vals.price}
-                                            onChange={e => updateItemField(item.itemId, "price", e.target.value)}
-                                            disabled={isSubmitted || !isOpen}
-                                            min="0" step="0.01"
-                                            className={cn("h-8 text-sm", vals.price ? "border-green-300 bg-green-50" : "")}
-                                        />
-                                        {vals.price && (
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                                Total: {rfp.currency} {(parseFloat(vals.price) * item.quantity).toLocaleString()}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <Label className="text-xs">Lead Time (days)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="e.g. 14"
-                                            value={vals.leadTime}
-                                            onChange={e => updateItemField(item.itemId, "leadTime", e.target.value)}
-                                            disabled={isSubmitted || !isOpen}
-                                            min="1"
-                                            className="h-8 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-xs">MOQ</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Min. order qty"
-                                            value={vals.moq}
-                                            onChange={e => updateItemField(item.itemId, "moq", e.target.value)}
-                                            disabled={isSubmitted || !isOpen}
-                                            min="0" step="any"
-                                            className="h-8 text-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <Label className="text-xs">Notes for this item</Label>
-                                    <Input
-                                        placeholder="Any specific notes about this item..."
-                                        value={vals.notes}
-                                        onChange={e => updateItemField(item.itemId, "notes", e.target.value)}
-                                        disabled={isSubmitted || !isOpen}
-                                        className="h-8 text-sm"
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })}
-
-                    {/* General Notes */}
-                    <div>
-                        <Label>General Notes / Remarks</Label>
-                        <Textarea
-                            placeholder="Any general comments, payment terms, delivery conditions, or other information relevant to your quote..."
-                            value={generalNotes}
-                            onChange={e => setGeneralNotes(e.target.value)}
-                            disabled={isSubmitted || !isOpen}
-                            rows={3}
-                        />
-                    </div>
-
-                    {/* Quote Summary */}
-                    {Object.values(responseItems).some(r => r.price) && (
-                        <div className="bg-indigo-50 rounded-lg px-4 py-3 border border-indigo-100">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-indigo-700">Estimated Total (sum of unit prices)</span>
-                                <span className="text-lg font-bold text-indigo-700">
-                                    {rfp.currency} {totalQuoted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* ── Submit / Draft Actions ── */}
-            {!isSubmitted && isOpen && !isExpired && (
-                <div className="flex gap-3 justify-end">
-                    <Button variant="outline" onClick={handleSaveDraft} disabled={saving || submitting} className="gap-1.5">
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Save Draft
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={saving || submitting} className="bg-indigo-600 hover:bg-indigo-700 gap-1.5">
-                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        Submit Quote
-                    </Button>
-                </div>
-            )}
-
-            {/* ── Negotiation Rounds ── */}
+            {/* Negotiation rounds */}
             {negotiationRounds.length > 0 && (
                 <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
                             <RefreshCw className="h-4 w-4 text-amber-600" />
                             Negotiation Rounds
-                            <Badge variant="outline" className="text-[10px] ml-auto">
-                                {negotiationRounds.length} round{negotiationRounds.length !== 1 ? "s" : ""}
-                            </Badge>
+                            <Badge variant="outline" className="text-xs">{negotiationRounds.length} round{negotiationRounds.length !== 1 ? "s" : ""}</Badge>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {negotiationRounds.map(round => {
-                            const isRoundOpen = round.status === "OPEN";
                             const isExpanded = expandedRound === round.roundId;
-
                             return (
-                                <div key={round.roundId} className={cn(
-                                    "border rounded-lg overflow-hidden",
-                                    isRoundOpen ? "border-amber-300" : "border-slate-200"
-                                )}>
-                                    {/* Round header */}
-                                    <button
-                                        className={cn(
-                                            "w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-slate-50 transition-colors text-left",
-                                            isRoundOpen && "bg-amber-50 hover:bg-amber-50/80"
-                                        )}
-                                        onClick={() => setExpandedRound(isExpanded ? null : round.roundId)}
-                                    >
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span>Round {round.roundNumber}</span>
-                                            <Badge variant="outline" className={cn("text-[10px]",
-                                                isRoundOpen ? "bg-amber-100 text-amber-700 border-amber-300" : "bg-slate-100 text-slate-600"
-                                            )}>
+                                <div key={round.roundId} className="border rounded-lg overflow-hidden">
+                                    <button onClick={() => setExpandedRound(isExpanded ? null : round.roundId)}
+                                        className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">Round {round.roundNumber}</span>
+                                            <Badge className={cn("text-xs", round.status === "OPEN" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600")}>
                                                 {round.status}
                                             </Badge>
-                                            {round.hasBid && (
-                                                <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">
-                                                    <CheckCircle2 className="h-2.5 w-2.5 mr-1" /> Bid Submitted
-                                                </Badge>
-                                            )}
-                                            {isRoundOpen && !round.hasBid && (
-                                                <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-700 border-orange-300">
-                                                    Action Required
-                                                </Badge>
-                                            )}
+                                            {round.hasBid && <Badge className="bg-green-100 text-green-700 text-xs">Bid Submitted</Badge>}
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>{new Date(round.createdAt).toLocaleDateString()}</span>
-                                            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                                        </div>
+                                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                     </button>
-
-                                    {/* Round body */}
-                                    {isExpanded && (
-                                        <div className="px-4 py-4 border-t bg-white space-y-4">
-                                            {round.notes && (
-                                                <div className="bg-amber-50 rounded-md px-3 py-2 text-sm text-amber-800">
-                                                    <span className="font-medium">Buyer note: </span>{round.notes}
-                                                </div>
-                                            )}
-
-                                            {isRoundOpen && !round.hasBid ? (
-                                                <>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Submit revised prices for this negotiation round.
-                                                    </p>
-                                                    <div className="space-y-3">
-                                                        {(rfp.items || []).map((item: RFPItem) => {
-                                                            const prevPrice = parseFloat(responseItems[item.itemId]?.price || "0");
-                                                            const newPriceStr = negBidItems[item.itemId] || "";
-                                                            const newPrice = parseFloat(newPriceStr);
-                                                            const hasPrev = !isNaN(prevPrice) && prevPrice > 0;
-                                                            const hasNew = newPriceStr !== "" && !isNaN(newPrice) && newPrice > 0;
-                                                            const delta = hasPrev && hasNew ? ((newPrice - prevPrice) / prevPrice * 100) : null;
-
-                                                            return (
-                                                                <div key={item.itemId} className="flex items-center gap-3 p-3 border rounded-md bg-slate-50">
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="text-sm font-medium truncate">{item.name}</p>
-                                                                        {hasPrev && (
-                                                                            <p className="text-xs text-muted-foreground">
-                                                                                Previous: {rfp.currency} {prevPrice.toLocaleString()}
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div>
-                                                                            <Label className="text-xs">New Price ({rfp.currency})</Label>
-                                                                            <Input
-                                                                                type="number"
-                                                                                placeholder="0.00"
-                                                                                value={newPriceStr}
-                                                                                onChange={e => setNegBidItems(prev => ({ ...prev, [item.itemId]: e.target.value }))}
-                                                                                min="0" step="0.01"
-                                                                                className="h-8 text-sm w-32"
-                                                                            />
-                                                                        </div>
-                                                                        {delta !== null && (
-                                                                            <div className="flex items-center gap-1 text-xs mt-4">
-                                                                                {delta < 0
-                                                                                    ? <TrendingDown className="h-3.5 w-3.5 text-green-600" />
-                                                                                    : delta > 0
-                                                                                    ? <TrendingUp className="h-3.5 w-3.5 text-rose-500" />
-                                                                                    : <Minus className="h-3.5 w-3.5 text-slate-400" />}
-                                                                                <span className={cn(
-                                                                                    delta < 0 ? "text-green-600" : delta > 0 ? "text-rose-500" : "text-slate-400"
-                                                                                )}>
-                                                                                    {delta > 0 ? "+" : ""}{delta.toFixed(1)}%
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
+                                    {isExpanded && round.status === "OPEN" && !round.hasBid && (
+                                        <div className="px-4 pb-4 space-y-3 border-t">
+                                            <p className="text-sm text-muted-foreground pt-3">Submit revised prices for this round.</p>
+                                            <div className="space-y-2">
+                                                {(rfp.items || []).map((item: RFPItem) => (
+                                                    <div key={item.itemId} className="flex items-center gap-3">
+                                                        <Label className="flex-1 text-sm">{item.name}</Label>
+                                                        <Input type="number" className="w-32" placeholder="New price"
+                                                            value={negBidItems[item.itemId] || ""}
+                                                            onChange={e => setNegBidItems(p => ({ ...p, [item.itemId]: e.target.value }))} />
+                                                        <span className="text-xs text-muted-foreground">{currency}/{item.unit}</span>
                                                     </div>
-                                                    <div className="flex justify-end">
-                                                        <Button
-                                                            className="bg-amber-600 hover:bg-amber-700 gap-1.5"
-                                                            disabled={submittingNegBid}
-                                                            onClick={() => handleSubmitNegBid(round.roundId)}
-                                                        >
-                                                            {submittingNegBid
-                                                                ? <Loader2 className="h-4 w-4 animate-spin" />
-                                                                : <Send className="h-4 w-4" />}
-                                                            Submit Revised Bid
-                                                        </Button>
-                                                    </div>
-                                                </>
-                                            ) : round.hasBid ? (
-                                                <div className="flex items-center gap-2 text-sm text-green-700">
-                                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                                    Your revised bid has been submitted for this round.
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm text-muted-foreground">This round is closed. No further bids accepted.</p>
-                                            )}
+                                                ))}
+                                            </div>
+                                            <Button onClick={() => handleNegotiationBid(round.roundId)} disabled={submittingNegBid}
+                                                className="bg-amber-600 hover:bg-amber-700 gap-1.5">
+                                                {submittingNegBid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                                Submit Bid
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {isExpanded && (round.status === "CLOSED" || round.hasBid) && (
+                                        <div className="px-4 pb-3 pt-2 text-sm text-muted-foreground border-t">
+                                            {round.hasBid ? "Your bid has been submitted for this round." : "This round is closed."}
                                         </div>
                                     )}
                                 </div>
@@ -588,6 +427,438 @@ export default function SupplierRFPResponsePage() {
                         })}
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Main response form — shown only when accepted and open (or already submitted to view) */}
+            {(inviteStatus === "ACCEPTED" || isSubmitted) && (
+                <Card>
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm">
+                                {isSubmitted ? "Your Submitted Response" : "Submit Your Response"}
+                            </CardTitle>
+                            {isSubmitted && <Badge className="bg-emerald-100 text-emerald-700 gap-1"><CheckCircle2 className="h-3 w-3" />Submitted</Badge>}
+                        </div>
+                        {/* Section tabs */}
+                        <div className="flex gap-1 overflow-x-auto pt-2 pb-0.5 -mx-1 px-1">
+                            {RESPONSE_TABS.map(tab => {
+                                const Icon = tab.icon;
+                                return (
+                                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0",
+                                            activeTab === tab.id
+                                                ? "bg-indigo-600 text-white"
+                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                        )}>
+                                        <Icon className="h-3 w-3" />
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+
+                        {/* ── Tab: Pricing (Section 4 — unit price + lead time) ── */}
+                        {activeTab === "pricing" && (
+                            <div className="space-y-4">
+                                {(rfp.items || []).map((item: RFPItem) => {
+                                    const ri = getItem(item.itemId);
+                                    return (
+                                        <div key={item.itemId} className="border rounded-lg p-4 space-y-3 bg-slate-50/50">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <div className="font-medium text-sm">{item.name}</div>
+                                                    {item.specifications && <div className="text-xs text-muted-foreground mt-0.5">{item.specifications}</div>}
+                                                </div>
+                                                <div className="text-right text-xs text-muted-foreground">
+                                                    <div>{item.quantity} {item.unit}</div>
+                                                    {item.targetPrice && (
+                                                        <div className="text-indigo-600 mt-0.5">Target: {currency} {item.targetPrice}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs">Unit Price ({currency}) *</Label>
+                                                    <Input type="number" placeholder="0.00" disabled={isSubmitted}
+                                                        value={ri.price} onChange={e => updateItem(item.itemId, "price", e.target.value)} />
+                                                    {item.targetPrice && ri.price && (
+                                                        <div className={cn("text-xs flex items-center gap-1",
+                                                            parseFloat(ri.price) <= item.targetPrice ? "text-green-600" : "text-red-500")}>
+                                                            {parseFloat(ri.price) <= item.targetPrice
+                                                                ? <TrendingDown className="h-3 w-3" />
+                                                                : <TrendingUp className="h-3 w-3" />}
+                                                            {(((parseFloat(ri.price) - item.targetPrice) / item.targetPrice) * 100).toFixed(1)}% vs target
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs">Lead Time (days)</Label>
+                                                    <Input type="number" placeholder="0" disabled={isSubmitted}
+                                                        value={ri.leadTime} onChange={e => updateItem(item.itemId, "leadTime", e.target.value)} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs">MOQ ({item.unit})</Label>
+                                                    <Input type="number" placeholder="0" disabled={isSubmitted}
+                                                        value={ri.moq} onChange={e => updateItem(item.itemId, "moq", e.target.value)} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs">Notes</Label>
+                                                    <Input placeholder="Optional" disabled={isSubmitted}
+                                                        value={ri.notes} onChange={e => updateItem(item.itemId, "notes", e.target.value)} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <div className="space-y-1">
+                                    <Label className="text-xs">General Notes</Label>
+                                    <Textarea placeholder="Any general notes for the buyer…" disabled={isSubmitted}
+                                        value={generalNotes} onChange={e => setGeneralNotes(e.target.value)} rows={2} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Tab: Cost Breakdown (Section 4 detailed) ── */}
+                        {activeTab === "cost" && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">Break down your unit price into cost components. This helps buyers validate pricing logic.</p>
+                                {(rfp.items || []).map((item: RFPItem) => {
+                                    const ri = getItem(item.itemId);
+                                    const components = [
+                                        { key: "rawMaterialCost", label: "Raw Material Cost" },
+                                        { key: "conversionCost", label: "Conversion / Processing Cost" },
+                                        { key: "laborCost", label: "Labor Cost" },
+                                        { key: "logisticsCost", label: "Logistics / Freight" },
+                                        { key: "overheadCost", label: "Overhead" },
+                                        { key: "supplierMargin", label: "Margin (optional)" },
+                                    ];
+                                    const subtotal = components.slice(0, 5)
+                                        .map(c => parseFloat((ri as any)[c.key] || "0"))
+                                        .reduce((a, b) => a + b, 0);
+                                    const margin = parseFloat(ri.supplierMargin || "0");
+                                    const total = subtotal + margin;
+                                    return (
+                                        <div key={item.itemId} className="border rounded-lg p-4 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium text-sm">{item.name}</span>
+                                                {ri.price && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Quoted: <strong className="text-slate-800">{currency} {ri.price}</strong>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                {components.map(comp => (
+                                                    <div key={comp.key} className="space-y-1">
+                                                        <Label className="text-xs">{comp.label} ({currency})</Label>
+                                                        <Input type="number" placeholder="0.00" disabled={isSubmitted}
+                                                            value={(ri as any)[comp.key]}
+                                                            onChange={e => updateItem(item.itemId, comp.key, e.target.value)} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {total > 0 && (
+                                                <div className="flex items-center justify-between text-xs bg-slate-50 rounded px-3 py-2">
+                                                    <span className="text-muted-foreground">Cost breakdown total</span>
+                                                    <span className={cn("font-semibold", ri.price && Math.abs(total - parseFloat(ri.price)) > 0.01 ? "text-amber-600" : "text-slate-800")}>
+                                                        {currency} {total.toFixed(2)}
+                                                        {ri.price && Math.abs(total - parseFloat(ri.price)) > 0.01 && (
+                                                            <span className="ml-1 font-normal text-amber-600">(differs from quoted price)</span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* ── Tab: Qualification (Section 2) ── */}
+                        {activeTab === "qual" && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">Qualification Score = Financial (20%) + Capability (40%) + Experience (25%) + Compliance (15%)</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Legal Entity Name</Label>
+                                        <Input value={qual.legalEntity} onChange={e => setQual(p => ({ ...p, legalEntity: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Headquarters Location</Label>
+                                        <Input value={qual.headquarters} onChange={e => setQual(p => ({ ...p, headquarters: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Annual Revenue (USD)</Label>
+                                        <Input type="number" placeholder="e.g. 5000000" value={qual.annualRevenue}
+                                            onChange={e => setQual(p => ({ ...p, annualRevenue: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Number of Employees</Label>
+                                        <Input type="number" value={qual.employees} onChange={e => setQual(p => ({ ...p, employees: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Monthly Production Capacity</Label>
+                                        <Input placeholder="e.g. 500,000 units/month" value={qual.monthlyCapacity}
+                                            onChange={e => setQual(p => ({ ...p, monthlyCapacity: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Major Clients (comma-separated)</Label>
+                                        <Input placeholder="e.g. P&G, Unilever, Nestlé" value={qual.majorClients}
+                                            onChange={e => setQual(p => ({ ...p, majorClients: e.target.value }))} />
+                                    </div>
+                                    <div className="sm:col-span-2 space-y-1.5">
+                                        <Label className="text-xs">Certifications Held</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {["ISO 9001", "ISO 14001", "GMP", "FSC", "HACCP", "SA8000", "ISO 45001"].map(cert => (
+                                                <label key={cert} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                                                    <input type="checkbox"
+                                                        checked={qual.certifications.includes(cert)}
+                                                        onChange={e => setQual(p => ({
+                                                            ...p,
+                                                            certifications: e.target.checked
+                                                                ? [...p.certifications, cert]
+                                                                : p.certifications.filter(c => c !== cert)
+                                                        }))}
+                                                        className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+                                                    {cert}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="sm:col-span-2 space-y-1.5">
+                                        <Label className="text-xs">Financial Stability Notes</Label>
+                                        <Textarea placeholder="e.g. Profitable for 10 consecutive years, credit rating A…" rows={2}
+                                            value={qual.financialNotes} onChange={e => setQual(p => ({ ...p, financialNotes: e.target.value }))} />
+                                    </div>
+                                </div>
+                                <Button onClick={handleSaveQual} variant="outline" className="gap-1.5">
+                                    <Save className="h-4 w-4" /> Save Qualification
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* ── Tab: Logistics (Section 5) ── */}
+                        {activeTab === "logistics" && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Delivery Terms</Label>
+                                        <select value={logistics.deliveryTerms}
+                                            onChange={e => setLogistics(p => ({ ...p, deliveryTerms: e.target.value }))}
+                                            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm">
+                                            <option value="">— Select —</option>
+                                            {["EXW", "FOB", "CIF", "DAP", "DDP", "FCA", "CPT"].map(t => <option key={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Transport Method</Label>
+                                        <select value={logistics.transportMethod}
+                                            onChange={e => setLogistics(p => ({ ...p, transportMethod: e.target.value }))}
+                                            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm">
+                                            <option value="">— Select —</option>
+                                            {["Road", "Sea", "Air", "Rail", "Multimodal"].map(t => <option key={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Warehouse Locations</Label>
+                                        <Input placeholder="e.g. Mumbai, Singapore, Rotterdam" value={logistics.warehouseLocations}
+                                            onChange={e => setLogistics(p => ({ ...p, warehouseLocations: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Monthly Supply Capacity (units)</Label>
+                                        <Input type="number" value={logistics.supplyCapacityMonthly}
+                                            onChange={e => setLogistics(p => ({ ...p, supplyCapacityMonthly: e.target.value }))} />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={logistics.hasBackupSupplier}
+                                                onChange={e => setLogistics(p => ({ ...p, hasBackupSupplier: e.target.checked }))}
+                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+                                            <span className="text-sm">We have a backup supplier / secondary manufacturing site</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <Button onClick={handleSaveLogistics} variant="outline" className="gap-1.5">
+                                    <Save className="h-4 w-4" /> Save Logistics
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* ── Tab: Quality & Compliance (Section 6) ── */}
+                        {activeTab === "quality" && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="sm:col-span-2 space-y-2">
+                                        <Label className="text-xs text-muted-foreground">Certifications</Label>
+                                        <div className="flex flex-wrap gap-3">
+                                            {[
+                                                { key: "isoCertified", label: "ISO 9001" },
+                                                { key: "gmpCertified", label: "GMP" },
+                                                { key: "fscCertified", label: "FSC" },
+                                            ].map(cert => (
+                                                <label key={cert.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                                                    <input type="checkbox"
+                                                        checked={(quality as any)[cert.key]}
+                                                        onChange={e => setQuality(p => ({ ...p, [cert.key]: e.target.checked }))}
+                                                        className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+                                                    {cert.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Other Certifications</Label>
+                                        <Input placeholder="e.g. HACCP, BRC, SQF" value={quality.otherCertifications}
+                                            onChange={e => setQuality(p => ({ ...p, otherCertifications: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Defect Rate (%)</Label>
+                                        <Input type="number" placeholder="e.g. 0.5" value={quality.defectRatePct}
+                                            onChange={e => setQuality(p => ({ ...p, defectRatePct: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Inspection Process</Label>
+                                        <Input placeholder="e.g. Incoming + outgoing QC" value={quality.inspectionProcess}
+                                            onChange={e => setQuality(p => ({ ...p, inspectionProcess: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Traceability System</Label>
+                                        <Input placeholder="e.g. Batch tracking with ERP" value={quality.traceabilitySystem}
+                                            onChange={e => setQuality(p => ({ ...p, traceabilitySystem: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Audit Report URL</Label>
+                                        <Input type="url" placeholder="https://…" value={quality.auditReportUrl}
+                                            onChange={e => setQuality(p => ({ ...p, auditReportUrl: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Quality Manual URL</Label>
+                                        <Input type="url" placeholder="https://…" value={quality.qualityManualUrl}
+                                            onChange={e => setQuality(p => ({ ...p, qualityManualUrl: e.target.value }))} />
+                                    </div>
+                                </div>
+                                <Button onClick={handleSaveQuality} variant="outline" className="gap-1.5">
+                                    <Save className="h-4 w-4" /> Save Quality & Compliance
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* ── Tab: ESG (Section 7) ── */}
+                        {activeTab === "esg" && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">ESG Score = Carbon (40%) + Recycled Content (30%) + Renewable Energy (30%)</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Recycled Content (%)</Label>
+                                        <Input type="number" min="0" max="100" placeholder="e.g. 40" value={esg.recycledContentPct}
+                                            onChange={e => setEsg(p => ({ ...p, recycledContentPct: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Carbon Footprint (kg CO₂ / unit)</Label>
+                                        <Input type="number" placeholder="e.g. 2.5" value={esg.carbonFootprintKg}
+                                            onChange={e => setEsg(p => ({ ...p, carbonFootprintKg: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Renewable Energy Usage (%)</Label>
+                                        <Input type="number" min="0" max="100" placeholder="e.g. 60" value={esg.renewableEnergyPct}
+                                            onChange={e => setEsg(p => ({ ...p, renewableEnergyPct: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Packaging Reduction Initiatives</Label>
+                                        <Input placeholder="e.g. 20% weight reduction in 2025" value={esg.packagingReductionInitiative}
+                                            onChange={e => setEsg(p => ({ ...p, packagingReductionInitiative: e.target.value }))} />
+                                    </div>
+                                    <div className="sm:col-span-2 space-y-1.5">
+                                        <Label className="text-xs">ESG Policies & Commitments</Label>
+                                        <Textarea placeholder="Describe your sustainability policies, net-zero targets, supply chain ethics…" rows={3}
+                                            value={esg.esgPolicies} onChange={e => setEsg(p => ({ ...p, esgPolicies: e.target.value }))} />
+                                    </div>
+                                </div>
+                                <Button onClick={handleSaveESG} variant="outline" className="gap-1.5">
+                                    <Save className="h-4 w-4" /> Save ESG Data
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* ── Tab: Commercial Terms (Section 8) ── */}
+                        {activeTab === "terms" && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Our Payment Terms</Label>
+                                        <select value={terms.paymentTerms}
+                                            onChange={e => setTerms(p => ({ ...p, paymentTerms: e.target.value }))}
+                                            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm">
+                                            <option value="">— Select —</option>
+                                            {["Net 30", "Net 45", "Net 60", "Net 90", "Advance", "LC at Sight"].map(t => <option key={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Price Validity (days)</Label>
+                                        <Input type="number" placeholder="90" value={terms.priceValidityDays}
+                                            onChange={e => setTerms(p => ({ ...p, priceValidityDays: e.target.value }))} />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Commodity Index Linkage</Label>
+                                        <Input placeholder="e.g. Linked to OCC index" value={terms.commodityIndexLinkage}
+                                            onChange={e => setTerms(p => ({ ...p, commodityIndexLinkage: e.target.value }))} />
+                                    </div>
+                                    <div className="flex flex-col gap-3 justify-center">
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                                            <input type="checkbox" checked={terms.acceptsPenaltyClauses}
+                                                onChange={e => setTerms(p => ({ ...p, acceptsPenaltyClauses: e.target.checked }))}
+                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+                                            Accept penalty clauses for late delivery
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                                            <input type="checkbox" checked={terms.generalTermsAccepted}
+                                                onChange={e => setTerms(p => ({ ...p, generalTermsAccepted: e.target.checked }))}
+                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+                                            <span>Accept buyer&apos;s general terms & conditions</span>
+                                        </label>
+                                    </div>
+                                    <div className="sm:col-span-2 space-y-1.5">
+                                        <Label className="text-xs">Terms Notes / Exceptions</Label>
+                                        <Textarea placeholder="Any exceptions or notes regarding the commercial terms…" rows={2}
+                                            value={terms.termsNotes} onChange={e => setTerms(p => ({ ...p, termsNotes: e.target.value }))} />
+                                    </div>
+                                </div>
+                                <Button onClick={handleSaveTerms} variant="outline" className="gap-1.5">
+                                    <Save className="h-4 w-4" /> Save Commercial Terms
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* ── Footer actions ── */}
+                        {!isSubmitted && isOpen && (
+                            <div className="border-t pt-4 flex gap-3 justify-end">
+                                <Button variant="outline" onClick={handleSaveDraft} disabled={saving} className="gap-1.5">
+                                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                    Save Draft
+                                </Button>
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={submitting || (rfp.requireComplianceAck && !complianceAckAccepted)}
+                                    title={rfp.requireComplianceAck && !complianceAckAccepted ? "You must accept the compliance acknowledgement above before submitting" : undefined}
+                                    className="bg-indigo-600 hover:bg-indigo-700 gap-1.5">
+                                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                    Submit Response
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Not accepted / no access */}
+            {!award && !isSubmitted && inviteStatus !== "ACCEPTED" && inviteStatus !== "INVITED" && (
+                <div className="text-center py-12 text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                    <p>You are not invited to respond to this RFP.</p>
+                </div>
             )}
         </div>
     );
