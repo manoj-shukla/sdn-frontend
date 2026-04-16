@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { DraggableDevTool } from "@/components/demo/DraggableDevTool";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 export type AdminRole = "Super Admin" | "SEM" | "AP" | "Compliance";
 
@@ -18,17 +19,22 @@ interface AdminRoleContextType {
 const AdminRoleContext = createContext<AdminRoleContextType | undefined>(undefined);
 
 export function AdminRoleProvider({ children }: { children: ReactNode }) {
+    const { user } = useAuthStore();
     const [role, setRole] = useState<AdminRole>("Super Admin");
+
+    // Platform ADMIN users (real role from JWT) always have full Super Admin privileges.
+    // The dev tool role switcher only applies to non-ADMIN users previewing different roles.
+    const isSuperAdmin = user?.role === "ADMIN";
 
     // Super Admin: Can do everything
     // SEM: Can create/invite suppliers
     // AP/Compliance: Specialized read/verify/edit but no user creation
 
-    const canCreateAdmins = role === "Super Admin";
-    const canCreateBuyers = role === "Super Admin";
-    const canCreateSuppliers = role === "Super Admin" || role === "SEM";
-    const canManageFinancials = role === "Super Admin" || role === "AP";
-    const canVerifyCompliance = role === "Super Admin" || role === "Compliance";
+    const canCreateAdmins = isSuperAdmin || role === "Super Admin";
+    const canCreateBuyers = isSuperAdmin || role === "Super Admin";
+    const canCreateSuppliers = isSuperAdmin || role === "Super Admin" || role === "SEM";
+    const canManageFinancials = isSuperAdmin || role === "Super Admin" || role === "AP";
+    const canVerifyCompliance = isSuperAdmin || role === "Super Admin" || role === "Compliance";
 
     return (
         <AdminRoleContext.Provider value={{

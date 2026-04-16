@@ -53,7 +53,8 @@ export function SupplierRoleProvider({ children }: { children: ReactNode }) {
     }, [user?.supplierId]);
 
     // Status-based Locking: Fields are locked ONLY during active review or for restricted 'User' role.
-    const isActiveReview = ['SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
+    // SUBMITTED is intentionally excluded — URL and description should remain editable after submission.
+    const isActiveReview = ['IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
     const isCriticalFieldReadOnly = (role === "User") || isActiveReview;
     const canSubmit = role === "Admin" && status !== "APPROVED";
     const canManageUsers = role === "Admin";

@@ -90,9 +90,13 @@ export const useAuthStore = create<ExtendedAuthState>()(
             registeredBuyers: initialBuyers,
 
             login: (user: any) => {
-                // For Suppliers, set initial active profile if memberships exist
+                // For Suppliers, set initial active profile if memberships exist.
+                // Match by primary supplierId from JWT to avoid picking a stale/seeded membership.
                 if (user.role === 'SUPPLIER' && user.memberships?.length > 0) {
-                    const active = user.memberships[0];
+                    const primarySupplierId = user.supplierId;
+                    const active = (primarySupplierId
+                        ? user.memberships.find((m: any) => String(m.supplierId) === String(primarySupplierId))
+                        : null) || user.memberships[0];
                     user.supplierId = String(active.supplierId);
                     user.buyerId = String(active.buyerId);
                     user.supplierName = active.supplierName;

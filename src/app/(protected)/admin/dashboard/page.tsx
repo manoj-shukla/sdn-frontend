@@ -49,25 +49,39 @@ export default function AdminDashboardPage() {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const [growthRes, distRes, summaryRes, complianceRes] = await Promise.all([
+                // Use allSettled so a single failing endpoint doesn't blank the whole dashboard
+                const [growthResult, distResult, summaryResult, complianceResult] = await Promise.allSettled([
                     apiClient.get('/api/analytics/admin/growth'),
                     apiClient.get('/api/analytics/admin/distribution'),
                     apiClient.get('/api/analytics/admin/summary'),
                     apiClient.get('/api/analytics/admin/compliance')
-                ]) as any[];
+                ]);
+
+                const growthRes = growthResult.status === 'fulfilled' ? growthResult.value as any : [];
+                const distRes = distResult.status === 'fulfilled' ? distResult.value as any : [];
+                const summaryRes = summaryResult.status === 'fulfilled' ? summaryResult.value as any : {};
+                const complianceRes = complianceResult.status === 'fulfilled' ? complianceResult.value as any : {};
+
+                // Log any individual failures for diagnosis
+                [growthResult, distResult, summaryResult, complianceResult].forEach((r, i) => {
+                    if (r.status === 'rejected') {
+                        const names = ['growth', 'distribution', 'summary', 'compliance'];
+                        console.error(`[AdminDashboard] analytics/${names[i]} failed:`, r.reason);
+                    }
+                });
 
                 setStats(prev => ({
                     ...prev,
-                    totalUsers: summaryRes.totalUsers,
-                    totalBuyers: summaryRes.totalBuyers,
-                    pendingReviews: summaryRes.pendingReviews,
-                    totalSpend: summaryRes.totalSpend,
-                    systemHealth: summaryRes.systemHealth,
+                    totalUsers: summaryRes.totalUsers ?? prev.totalUsers,
+                    totalBuyers: summaryRes.totalBuyers ?? prev.totalBuyers,
+                    pendingReviews: summaryRes.pendingReviews ?? prev.pendingReviews,
+                    totalSpend: summaryRes.totalSpend ?? prev.totalSpend,
+                    systemHealth: summaryRes.systemHealth ?? prev.systemHealth,
                     complianceRate: complianceRes?.complianceRate || "0%"
                 }));
 
-                setGrowthData(growthRes);
-                setDistributionData(distRes);
+                if (Array.isArray(growthRes)) setGrowthData(growthRes);
+                if (Array.isArray(distRes)) setDistributionData(distRes);
 
             } catch (error: any) {
                 console.error("Error loading admin dashboard data", error);
