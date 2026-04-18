@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
     ArrowLeft, Loader2, BarChart2, Trophy, TrendingDown, AlertTriangle,
     Clock, CheckCircle2, RefreshCw, Plus, ShieldCheck, Leaf, Truck,
-    FileCheck, DollarSign, XCircle, AlertCircle
+    FileCheck, DollarSign, XCircle, AlertCircle, Package
 } from "lucide-react";
 import { toast } from "sonner";
 import type { RFP, ComparisonRow, RFPInsight, NegotiationRound, RFPAward } from "@/types/rfp";
@@ -51,7 +51,7 @@ interface ShouldCostRow {
     costFlags?: { supplierId: number; supplierName: string; flags: string[] }[];
 }
 
-interface QualRow { supplierId: number; supplierName: string; totalQualScore: number; isDisqualified: boolean; disqualificationReason: string | null; }
+interface QualRow { supplierId: number; supplierName: string; totalQualScore: number; financialScore: number; capabilityScore: number; experienceScore: number; complianceScore: number; isDisqualified: boolean; disqualificationReason: string | null; }
 interface QualityRow { supplierId: number; supplierName: string; complianceScore: number; isCompliant: boolean; disqualificationReason: string | null; }
 interface LogisticsRow { supplierId: number; supplierName: string; riskLevel: string; riskReasons: string[]; deliveryTerms: string; }
 interface ESGRow { supplierId: number; supplierName: string; esgScore: number; recycledContentPct: number | null; carbonFootprintKg: number | null; renewableEnergyPct: number | null; }
@@ -65,15 +65,16 @@ interface ComparisonData {
 }
 
 const TABS = [
-    { id: "pricing",   label: "Pricing",       icon: BarChart2 },
-    { id: "shouldcost", label: "Should-Cost",  icon: TrendingDown },
-    { id: "scores",    label: "Scorecard",     icon: Trophy },
-    { id: "qual",      label: "Qualification", icon: ShieldCheck },
-    { id: "quality",   label: "Quality",       icon: FileCheck },
-    { id: "logistics", label: "Logistics",     icon: Truck },
-    { id: "esg",       label: "ESG",           icon: Leaf },
-    { id: "terms",     label: "Terms",         icon: DollarSign },
-    { id: "insights",  label: "Insights",      icon: AlertTriangle },
+    { id: "specs",     label: "Specifications", icon: Package },
+    { id: "pricing",   label: "Pricing",        icon: BarChart2 },
+    { id: "shouldcost", label: "Should-Cost",   icon: TrendingDown },
+    { id: "scores",    label: "Scorecard",      icon: Trophy },
+    { id: "qual",      label: "Qualification",  icon: ShieldCheck },
+    { id: "quality",   label: "Quality",        icon: FileCheck },
+    { id: "logistics", label: "Logistics",      icon: Truck },
+    { id: "esg",       label: "ESG",            icon: Leaf },
+    { id: "terms",     label: "Terms",          icon: DollarSign },
+    { id: "insights",  label: "Insights",       icon: AlertTriangle },
 ];
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -213,7 +214,7 @@ export default function RFPComparisonPage() {
         : [];
 
     return (
-        <div className="max-w-7xl mx-auto py-8 px-4 space-y-6">
+        <div className="w-full py-8 px-6 space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div>
@@ -350,6 +351,54 @@ export default function RFPComparisonPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
+
+                    {/* ── Technical Specifications ── */}
+                    {activeTab === "specs" && (
+                        <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                                Technical specifications defined by the buyer for each line item (Section 3 — Structured Spec Engine).
+                            </p>
+                            {(rfp?.items || []).length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-8">No line items found.</p>
+                            )}
+                            {(rfp?.items || []).map((item: any) => {
+                                const specAttrs = item.specAttributes;
+                                const hasStructuredSpecs = specAttrs && Object.keys(specAttrs).length > 0;
+                                return (
+                                    <div key={item.itemId} className="border rounded-lg overflow-hidden">
+                                        <div className="bg-slate-50 px-4 py-2 flex items-center justify-between">
+                                            <span className="font-medium text-sm">{item.name}</span>
+                                            <span className="text-xs text-muted-foreground">{item.quantity} {item.unit}</span>
+                                        </div>
+                                        <div className="px-4 py-3 space-y-3">
+                                            {hasStructuredSpecs ? (
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-semibold text-indigo-700 flex items-center gap-1">
+                                                        <Package className="h-3.5 w-3.5" /> Structured Technical Attributes
+                                                    </p>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                                        {Object.entries(specAttrs).filter(([, v]) => v !== "" && v !== null && v !== undefined).map(([key, value]) => (
+                                                            <div key={key} className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 text-xs">
+                                                                <div className="text-indigo-500 capitalize mb-0.5">{key.replace(/_/g, " ")}</div>
+                                                                <div className="font-semibold text-slate-800">{String(value)}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground italic">No structured spec attributes defined for this item.</p>
+                                            )}
+                                            {item.specifications && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    <span className="font-medium text-slate-600">Notes: </span>{item.specifications}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {/* ── Pricing Comparison ── */}
                     {activeTab === "pricing" && (
@@ -519,26 +568,52 @@ export default function RFPComparisonPage() {
 
                     {/* ── Qualification ── */}
                     {activeTab === "qual" && (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
+                            <p className="text-xs text-muted-foreground">
+                                Qualification Score = Financial (20%) + Capability (40%) + Experience (25%) + Compliance (15%)
+                            </p>
                             {qualRows.length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-8">No qualification responses submitted yet.</p>
                             ) : qualRows.map(r => (
                                 <div key={r.supplierId} className={cn(
-                                    "flex items-center justify-between border rounded-lg px-4 py-3",
+                                    "border rounded-lg px-4 py-4 space-y-3",
                                     r.isDisqualified ? "border-red-200 bg-red-50/40" : ""
                                 )}>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium text-sm">{r.supplierName}</span>
-                                            {r.isDisqualified
-                                                ? <Badge className="bg-red-100 text-red-700 gap-1 text-xs"><XCircle className="h-3 w-3" />Disqualified</Badge>
-                                                : <Badge className="bg-green-100 text-green-700 gap-1 text-xs"><CheckCircle2 className="h-3 w-3" />Qualified</Badge>}
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium text-sm">{r.supplierName}</span>
+                                                {r.isDisqualified
+                                                    ? <Badge className="bg-red-100 text-red-700 gap-1 text-xs"><XCircle className="h-3 w-3" />Disqualified</Badge>
+                                                    : <Badge className="bg-green-100 text-green-700 gap-1 text-xs"><CheckCircle2 className="h-3 w-3" />Qualified</Badge>}
+                                            </div>
+                                            {r.disqualificationReason && <p className="text-xs text-red-600 mt-0.5">{r.disqualificationReason}</p>}
                                         </div>
-                                        {r.disqualificationReason && <p className="text-xs text-red-600 mt-0.5">{r.disqualificationReason}</p>}
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-indigo-700">{Math.round(r.totalQualScore)}</div>
+                                            <div className="text-xs text-muted-foreground">/100 total</div>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-lg font-bold text-indigo-700">{Math.round(r.totalQualScore)}</div>
-                                        <div className="text-xs text-muted-foreground">qual score</div>
+                                    {/* Sub-score breakdown */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                        {[
+                                            { label: "Financial", weight: "20%", score: r.financialScore, color: "bg-blue-50 text-blue-700" },
+                                            { label: "Capability", weight: "40%", score: r.capabilityScore, color: "bg-indigo-50 text-indigo-700" },
+                                            { label: "Experience", weight: "25%", score: r.experienceScore, color: "bg-violet-50 text-violet-700" },
+                                            { label: "Compliance", weight: "15%", score: r.complianceScore, color: "bg-amber-50 text-amber-700" },
+                                        ].map(dim => (
+                                            <div key={dim.label} className={cn("rounded-lg p-2 space-y-1", dim.color)}>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium">{dim.label}</span>
+                                                    <span className="opacity-60">{dim.weight}</span>
+                                                </div>
+                                                <div className="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden">
+                                                    <div className="h-1.5 rounded-full bg-current opacity-70 transition-all"
+                                                        style={{ width: `${Math.min(100, dim.score ?? 0)}%` }} />
+                                                </div>
+                                                <div className="font-bold text-base">{Math.round(dim.score ?? 0)}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}

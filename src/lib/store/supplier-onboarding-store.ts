@@ -35,9 +35,31 @@ interface SupplierState {
     updateDocumentStatus: (docId: string, status: string, filePath?: string) => void;
     setStatus: (status: string) => void;
     markSectionComplete: (section: OnboardingSection, isComplete: boolean) => void;
+    reset: () => void;
 }
 
 import apiClient from '@/lib/api/client';
+
+const initialDocuments = () => [
+    { id: '1', name: 'Certificate of Incorporation', status: 'PENDING', required: true },
+    { id: '2', name: 'Tax Registration Certificate', status: 'PENDING', required: true },
+    { id: '3', name: 'Company Profile', status: 'PENDING', required: false },
+    { id: '4', name: 'Bank Letter', status: 'PENDING', required: false },
+    { id: '5', name: 'PAN Card', status: 'PENDING', required: false },
+    { id: '6', name: 'GST Certificate', status: 'PENDING', required: false },
+    { id: '7', name: 'W-9 Form', status: 'PENDING', required: false },
+];
+
+const initialCompletedSections = (): Record<OnboardingSection, boolean> => ({
+    dashboard: true,
+    company: false,
+    address: false,
+    contact: false,
+    tax: false,
+    bank: false,
+    documents: false,
+    messages: true,
+});
 
 export const useSupplierOnboardingStore = create<SupplierState>((set) => ({
     activeSection: 'dashboard',
@@ -46,15 +68,7 @@ export const useSupplierOnboardingStore = create<SupplierState>((set) => ({
     companyDetails: {},
     taxDetails: {},
     bankDetails: {},
-    documents: [
-        { id: '1', name: 'Certificate of Incorporation', status: 'PENDING', required: true },
-        { id: '2', name: 'Tax Registration Certificate', status: 'PENDING', required: true },
-        { id: '3', name: 'Company Profile', status: 'PENDING', required: false },
-        { id: '4', name: 'Bank Letter', status: 'PENDING', required: false },
-        { id: '5', name: 'PAN Card', status: 'PENDING', required: false },
-        { id: '6', name: 'GST Certificate', status: 'PENDING', required: false },
-        { id: '7', name: 'W-9 Form', status: 'PENDING', required: false },
-    ],
+    documents: initialDocuments(),
 
     messagesData: [],
     unreadCount: 0,
@@ -65,16 +79,7 @@ export const useSupplierOnboardingStore = create<SupplierState>((set) => ({
     supplierId: null,
     setSupplierId: (id) => set({ supplierId: id }),
 
-    completedSections: {
-        dashboard: true,
-        company: false,
-        address: false,
-        contact: false,
-        tax: false,
-        bank: false,
-        documents: false,
-        messages: true
-    },
+    completedSections: initialCompletedSections(),
 
     setCompanyDetails: (details) => set((state) => ({ companyDetails: { ...state.companyDetails, ...details } })),
     setTaxDetails: (details) => set({ taxDetails: details }),
@@ -115,5 +120,22 @@ export const useSupplierOnboardingStore = create<SupplierState>((set) => ({
 
     markSectionComplete: (section, isComplete) => set((state) => ({
         completedSections: { ...state.completedSections, [section]: isComplete }
-    }))
+    })),
+
+    // Call this at the start of every init() to prevent stale data from a
+    // previous supplier session bleeding into the next supplier's view.
+    reset: () => set({
+        activeSection: 'dashboard',
+        companyDetails: {},
+        taxDetails: {},
+        bankDetails: {},
+        documents: initialDocuments(),
+        messagesData: [],
+        unreadCount: 0,
+        status: 'DRAFT',
+        country: '',
+        supplierType: '',
+        supplierId: null,
+        completedSections: initialCompletedSections(),
+    }),
 }));

@@ -32,7 +32,7 @@ export function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuthStore();
     const { unreadCount: notificationsCount } = useNotificationStore();
-    const { unreadCount: messagesCount } = useSupplierOnboardingStore();
+    const { unreadCount: messagesCount, activeSection, status: onboardingStatus } = useSupplierOnboardingStore();
     const [isMounted, setIsMounted] = useState(false);
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
     const [currentPassword, setCurrentPassword] = useState("");
@@ -148,26 +148,20 @@ export function Sidebar() {
     const allItems = roleKey ? navConfig[roleKey] : [];
     const userSubRole = contextRole || (user as any).subRole || "User";
 
-    let displayItems = allItems;
+    // Approved suppliers should not see the ONBOARDING nav category
+    const isSupplierApproved =
+        roleKey?.toUpperCase() === "SUPPLIER" &&
+        (
+            (user.approvalStatus || '').toUpperCase() === 'APPROVED' ||
+            onboardingStatus.toUpperCase() === 'APPROVED'
+        );
 
-    if (roleKey === "SUPPLIER") {
-        const status = user.approvalStatus;
-        if (status !== "APPROVED") {
-            displayItems = [
-                { title: "Dashboard", href: "/supplier/dashboard?section=dashboard", icon: LayoutDashboard },
-                { title: "Company Details", href: "/supplier/dashboard?section=company", icon: User },
-                { title: "Registered Address", href: "/supplier/dashboard?section=address", icon: MapPin },
-                { title: "Contact Person", href: "/supplier/dashboard?section=contact", icon: Users },
-                { title: "Tax Information", href: "/supplier/dashboard?section=tax", icon: FileText },
-                { title: "Bank Details", href: "/supplier/dashboard?section=bank", icon: CreditCard },
-                { title: "Documents", href: "/supplier/dashboard?section=documents", icon: ClipboardCheck },
-                { title: "Messages", href: "/supplier/dashboard?section=messages", icon: Send },
-            ];
-        }
-    }
-
-    const items = displayItems.reduce<(NavItem | NavCategory)[]>((acc, item) => {
+    const items = allItems.reduce<(NavItem | NavCategory)[]>((acc, item) => {
         if ("category" in item) {
+            // Hide ONBOARDING section for approved suppliers
+            if (item.category === "ONBOARDING" && isSupplierApproved) {
+                return acc;
+            }
             const filteredSubItems = item.items.filter((subItem) => {
                 if (!subItem.allowedSubRoles) return true;
                 return subItem.allowedSubRoles.includes(userSubRole);
@@ -183,12 +177,22 @@ export function Sidebar() {
         return acc;
     }, []);
 
+    // Determine the active nav item.
+    // For items whose href contains ?section=…, match against the Zustand store's
+    // activeSection (which is kept in sync with the URL by the dashboard page's
+    // useEffect). This avoids importing useSearchParams, which requires a Suspense
+    // boundary in Next.js App Router and would crash the sidebar.
     const activeItem = items
         .flatMap((entry) => ("category" in entry ? entry.items : [entry]))
-        .filter(
-            (item) =>
-                pathname === item.href || pathname.startsWith(item.href + "/")
-        )
+        .filter((item) => {
+            const [hrefPath, hrefQuery] = item.href.split('?');
+            if (hrefQuery) {
+                const hrefSection = new URLSearchParams(hrefQuery).get('section');
+                return (pathname === hrefPath || pathname.startsWith(hrefPath + '/')) &&
+                    activeSection === hrefSection;
+            }
+            return pathname === item.href || pathname.startsWith(item.href + '/');
+        })
         .sort((a, b) => b.href.length - a.href.length)[0];
 
     const handleChangePassword = async () => {
@@ -339,7 +343,14 @@ export function Sidebar() {
                 </div>
 
                 {/* ── Navigation ── */}
-                <div className="flex-1 overflow-y-auto py-3 scrollbar-hide">
+                <div
+                    className={cn(
+                        "flex-1 overflow-y-auto py-3",
+                        "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent",
+                        "[&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full",
+                        "hover:[&::-webkit-scrollbar-thumb]:bg-white/35"
+                    )}
+                >
                     <nav className={cn("space-y-4", showFull ? "px-3" : "px-2")}>
                         {items.map((entry: NavItem | NavCategory, entryIdx: number) => {
                             if ("category" in entry) {
@@ -403,7 +414,7 @@ export function Sidebar() {
                     </nav>
                 </div>
 
-                {/* ── Footer ── */}
+                {/* ── Footer (fixed at bottom) ── */}
                 <div
                     className={cn(
                         "border-t border-white/10 py-2 space-y-0.5 shrink-0",

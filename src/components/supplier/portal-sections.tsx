@@ -895,9 +895,7 @@ export function DocumentsSection() {
             toast.info("Uploading " + file.name + "...");
 
             try {
-                const res = await apiClient.post(`/api/suppliers/${supplierId}/documents`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }) as any;
+                const res = await apiClient.post(`/api/suppliers/${supplierId}/documents`, formData) as any;
 
                 const filePath = res?.filePath || res?.filepath;
                 updateDocumentStatus(currentDocId, 'UPLOADED', filePath);

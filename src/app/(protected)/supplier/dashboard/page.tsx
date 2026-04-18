@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import apiClient from "@/lib/api/client";
-import { PortalHeader, PortalNav } from "@/components/supplier/portal-shell";
 import { DashboardOverview, CompanySection, AddressSection, ContactSection, TaxSection, BankSection, DocumentsSection, MessagesSection } from "@/components/supplier/portal-sections";
 import { useSupplierOnboardingStore } from "@/lib/store/supplier-onboarding-store";
 import { ApprovedSupplierDashboard } from "@/components/supplier/approved-dashboard";
@@ -34,7 +33,8 @@ function SupplierDashboardContent() {
         setBankDetails,
         setSupplierId,
         setStatus,
-        status: onboardingStatus
+        status: onboardingStatus,
+        reset: resetOnboardingStore,
     } = useSupplierOnboardingStore();
 
     const { user, updateBuyer } = useAuthStore();
@@ -46,16 +46,17 @@ function SupplierDashboardContent() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const router = useRouter();
 
-    // Sync section from URL
+    // Sync section from URL — reset to 'dashboard' home when no section param
     useEffect(() => {
         const section = searchParams.get('section');
-        if (section) {
-            setActiveSection(section as any);
-        }
+        setActiveSection(section ? (section as any) : 'dashboard');
     }, [searchParams]);
 
     useEffect(() => {
         const init = async () => {
+            // Clear any stale data from a previous supplier's session before
+            // fetching the current supplier's data.
+            resetOnboardingStore();
             try {
                 const meRes = await apiClient.get('/auth/me') as any;
                 if (!meRes.supplierId) return;
@@ -245,25 +246,32 @@ function SupplierDashboardContent() {
 
     if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
-    if (info?.approvalStatus === 'APPROVED') {
-        return <ApprovedSupplierDashboard supplierData={info} />;
+    // Portal home — always the approved dashboard regardless of approval status.
+    // All suppliers land here first. Onboarding sections are reached via the
+    // "Onboarding" nav group in the sidebar.
+    if (activeSection === 'dashboard') {
+        return (
+            <div className="p-8">
+                <ApprovedSupplierDashboard supplierData={info} />
+            </div>
+        );
     }
 
+    // Onboarding section — rendered when the supplier clicks any item under
+    // the Onboarding nav group (company, address, contact, tax, bank, documents, messages).
     return (
-        <div className="min-h-screen bg-background">
-            <main className="flex-1 p-8 bg-muted/10 h-[calc(100vh-64px)] overflow-auto">
-                <div className="w-full max-w-none space-y-6">
-                    {renderSection()}
-                    {isSubmitEnabled && info?.approvalStatus !== 'SUBMITTED' && info?.approvalStatus !== 'APPROVED' && info?.approvalStatus !== 'PRE_APPROVED' && (
-                        <div className="flex justify-end pt-4 border-t mt-8">
-                            <Button size="lg" onClick={handleFinalSubmit} disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Submit Profile
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            </main>
+        <div className="p-8 bg-muted/10 min-h-full">
+            <div className="w-full max-w-none space-y-6">
+                {renderSection()}
+                {isSubmitEnabled && onboardingStatus !== 'SUBMITTED' && onboardingStatus !== 'APPROVED' && onboardingStatus !== 'PRE_APPROVED' && (
+                    <div className="flex justify-end pt-4 border-t mt-8">
+                        <Button size="lg" onClick={handleFinalSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Submit Profile
+                        </Button>
+                    </div>
+                )}
+            </div>
 
             <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
                 <DialogContent className="sm:max-w-md text-center">

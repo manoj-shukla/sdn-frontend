@@ -106,7 +106,10 @@ export const useAuthStore = create<ExtendedAuthState>()(
                 set({ user, isAuthenticated: true });
             },
             logout: () => {
+                // Clear auth tokens AND the persisted store snapshot so the next
+                // user never sees stale X-Supplier-Id / X-Buyer-Id context headers.
                 localStorage.removeItem("token");
+                localStorage.removeItem("auth-storage");
                 document.cookie = "token=; path=/; max-age=0";
                 document.cookie = "role=; path=/; max-age=0";
                 set({ user: null, isAuthenticated: false });

@@ -45,6 +45,7 @@ interface RFPResponseData {
 }
 
 const RESPONSE_TABS = [
+    { id: "specs",   label: "Specifications", icon: Package },
     { id: "pricing", label: "Pricing", icon: BarChart3 },
     { id: "cost",    label: "Cost Breakdown", icon: DollarSign },
     { id: "qual",    label: "Qualification", icon: ShieldCheck },
@@ -63,7 +64,7 @@ export default function SupplierRFPResponsePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [activeTab, setActiveTab] = useState("pricing");
+    const [activeTab, setActiveTab] = useState("specs");
 
     // ── Section 4: Pricing (existing) ──────────────────────────────
     const [responseItems, setResponseItems] = useState<Record<string, {
@@ -284,7 +285,7 @@ export default function SupplierRFPResponsePage() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+        <div className="w-full py-8 px-6 space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div>
@@ -459,6 +460,52 @@ export default function SupplierRFPResponsePage() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
+
+                        {/* ── Tab: Specifications (Section 3) ── */}
+                        {activeTab === "specs" && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Review the technical specifications required by the buyer for each line item.
+                                    Confirm you can meet each specification or note any deviations.
+                                </p>
+                                {(rfp.items || []).length === 0 && (
+                                    <p className="text-sm text-muted-foreground text-center py-8">No line items found.</p>
+                                )}
+                                {(rfp.items || []).map((item: RFPItem) => {
+                                    const specAttrs = (item as any).specAttributes;
+                                    const hasStructuredSpecs = specAttrs && Object.keys(specAttrs).length > 0;
+                                    return (
+                                        <div key={item.itemId} className="border rounded-lg p-4 space-y-3">
+                                            <div className="flex items-start justify-between">
+                                                <span className="font-medium text-sm">{item.name}</span>
+                                                <span className="text-xs text-muted-foreground">{item.quantity} {item.unit}</span>
+                                            </div>
+                                            {hasStructuredSpecs && (
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-semibold text-indigo-700">Required Specifications</p>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                        {Object.entries(specAttrs).filter(([, v]) => v !== "" && v !== null && v !== undefined).map(([key, value]) => (
+                                                            <div key={key} className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 text-xs">
+                                                                <div className="text-indigo-500 capitalize mb-0.5">{key.replace(/_/g, " ")}</div>
+                                                                <div className="font-semibold text-slate-800">{String(value)}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {item.specifications && (
+                                                <div className="text-xs text-muted-foreground bg-slate-50 rounded-lg px-3 py-2">
+                                                    <span className="font-medium text-slate-600">Additional Notes: </span>{item.specifications}
+                                                </div>
+                                            )}
+                                            {!hasStructuredSpecs && !item.specifications && (
+                                                <p className="text-xs text-muted-foreground italic">No specific technical requirements defined for this item.</p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {/* ── Tab: Pricing (Section 4 — unit price + lead time) ── */}
                         {activeTab === "pricing" && (

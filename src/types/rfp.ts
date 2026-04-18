@@ -49,6 +49,7 @@ export interface RFPItem {
     quantity: number;
     unit?: string;
     specifications?: string;
+    specAttributes?: Record<string, string> | null;
     targetPrice?: number;
     targetPriceNote?: string;
     createdAt?: string;

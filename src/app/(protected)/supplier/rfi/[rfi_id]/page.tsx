@@ -206,9 +206,7 @@ export default function SupplierRFIResponsePage() {
             const formData = new FormData();
             formData.append("file", file);
             formData.append("questionId", qId);
-            const res = await apiClient.post(`/api/rfi/responses/${rfi_id}/documents`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            } as any) as any;
+            const res = await apiClient.post(`/api/rfi/responses/${rfi_id}/documents`, formData) as any;
             const attachment = {
                 attachmentId: res.attachmentId,
                 questionId: qId,

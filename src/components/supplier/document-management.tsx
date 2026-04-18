@@ -102,11 +102,7 @@ export function SupplierDocumentManagement({
 
         try {
             setUploading(true);
-            await apiClient.post(`/api/suppliers/${user.supplierId}/documents`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            await apiClient.post(`/api/suppliers/${user.supplierId}/documents`, formData);
             await fetchDocuments();
             toast.success(`${file.name} uploaded successfully as ${selectedType}!`);
             setSelectedType(""); // Reset after upload

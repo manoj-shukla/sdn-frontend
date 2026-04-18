@@ -109,11 +109,21 @@ export const navConfig: Record<string, NavConfigGroup> = {
             ]
         },
         {
+            category: "ONBOARDING",
+            items: [
+                { title: "Company Details",    href: "/supplier/dashboard?section=company",   icon: User },
+                { title: "Registered Address", href: "/supplier/dashboard?section=address",   icon: MapPin },
+                { title: "Contact Person",     href: "/supplier/dashboard?section=contact",   icon: Users },
+                { title: "Tax Information",    href: "/supplier/dashboard?section=tax",       icon: FileText },
+                { title: "Bank Details",       href: "/supplier/dashboard?section=bank",      icon: CreditCard },
+                { title: "Documents",          href: "/supplier/dashboard?section=documents", icon: ClipboardCheck },
+            ]
+        },
+        {
             category: "SOURCING",
             items: [
                 { title: "RFI Inbox", href: "/supplier/rfi", icon: ClipboardList },
                 { title: "RFP Invitations", href: "/supplier/rfp", icon: FileText },
-                { title: "Open RFQs", href: "/supplier/rfqs", icon: FileText },
                 { title: "My Bids", href: "/supplier/bids", icon: Hammer },
                 { title: "Awards", href: "/supplier/awards", icon: Trophy },
                 { title: "Bid History", href: "/supplier/history", icon: History },

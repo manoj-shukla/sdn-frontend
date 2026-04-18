@@ -27,6 +27,7 @@ interface LineItem {
     quantity: string;
     unit: string;
     specifications: string;
+    specAttributes: Record<string, string>;
     targetPrice: string;
     targetPriceNote: string;
 }
@@ -65,10 +66,65 @@ const CATEGORY_INSTRUCTIONS: Record<string, string> = {
     "Logistics": "Include carrier network map, tracking capabilities, and insurance coverage details.",
 };
 
+// ── Structured Spec Templates (Section 3) ─────────────────────────────────────
+
+interface SpecField {
+    key: string;
+    label: string;
+    type: "number" | "text" | "select";
+    unit?: string;
+    options?: string[];
+}
+
+const CATEGORY_SPEC_TEMPLATES: Record<string, SpecField[]> = {
+    "Packaging": [
+        { key: "length_mm",        label: "Length",              type: "number", unit: "mm" },
+        { key: "width_mm",         label: "Width",               type: "number", unit: "mm" },
+        { key: "height_mm",        label: "Height",              type: "number", unit: "mm" },
+        { key: "ply",              label: "Ply",                 type: "select", options: ["3-ply", "5-ply", "7-ply", "9-ply"] },
+        { key: "flute_type",       label: "Flute Type",          type: "select", options: ["B", "C", "BC", "E", "F", "EB"] },
+        { key: "outer_liner_gsm",  label: "Outer Liner GSM",     type: "number", unit: "GSM" },
+        { key: "inner_liner_gsm",  label: "Inner Liner GSM",     type: "number", unit: "GSM" },
+        { key: "printing_colors",  label: "Printing Colors",     type: "number" },
+        { key: "burst_factor",     label: "Burst Factor",        type: "number" },
+    ],
+    "Raw Materials": [
+        { key: "grade",            label: "Material Grade",      type: "text" },
+        { key: "purity_pct",       label: "Purity",              type: "number", unit: "%" },
+        { key: "origin_country",   label: "Country of Origin",   type: "text" },
+        { key: "form",             label: "Form",                type: "select", options: ["Sheet", "Coil", "Rod", "Wire", "Powder", "Pellet", "Other"] },
+        { key: "thickness_mm",     label: "Thickness",           type: "number", unit: "mm" },
+        { key: "tensile_strength", label: "Tensile Strength",    type: "number", unit: "MPa" },
+    ],
+    "Pharma": [
+        { key: "active_ingredient", label: "Active Ingredient",  type: "text" },
+        { key: "concentration_mg",  label: "Concentration",      type: "number", unit: "mg" },
+        { key: "dosage_form",       label: "Dosage Form",        type: "select", options: ["Tablet", "Capsule", "Liquid", "Injection", "Powder", "Cream", "Patch"] },
+        { key: "shelf_life_months", label: "Shelf Life",         type: "number", unit: "months" },
+        { key: "storage_condition", label: "Storage Condition",  type: "text" },
+        { key: "pharmacopeia",      label: "Pharmacopeia Std",   type: "select", options: ["USP", "BP", "EP", "JP", "IP", "Other"] },
+    ],
+    "Food": [
+        { key: "fat_pct",          label: "Fat Content",         type: "number", unit: "%" },
+        { key: "protein_pct",      label: "Protein Content",     type: "number", unit: "%" },
+        { key: "moisture_pct",     label: "Moisture",            type: "number", unit: "%" },
+        { key: "shelf_life_days",  label: "Shelf Life",          type: "number", unit: "days" },
+        { key: "packaging_type",   label: "Packaging Type",      type: "select", options: ["Bulk", "Pouch", "Can", "Bottle", "Carton", "Other"] },
+    ],
+    "Manufacturing": [
+        { key: "material",         label: "Material",            type: "text" },
+        { key: "tolerance_mm",     label: "Tolerance",           type: "number", unit: "±mm" },
+        { key: "surface_finish",   label: "Surface Finish",      type: "select", options: ["Polished", "Painted", "Anodized", "Galvanized", "Raw", "Other"] },
+        { key: "weight_kg",        label: "Weight",              type: "number", unit: "kg" },
+        { key: "process",          label: "Manufacturing Process", type: "select", options: ["CNC", "Casting", "Forging", "Stamping", "Injection Molding", "Welding", "Other"] },
+    ],
+};
+
 function newItem(): LineItem {
     return {
         id: crypto.randomUUID(), name: "", description: "",
         quantity: "", unit: "pcs", specifications: "",
+        specAttributes: {},
         targetPrice: "", targetPriceNote: "",
     };
 }
@@ -210,6 +266,7 @@ export default function BuyerRFPCreatePage() {
                     name: item.name, description: item.description,
                     quantity: parseFloat(item.quantity), unit: item.unit,
                     specifications: item.specifications,
+                    specAttributes: Object.keys(item.specAttributes || {}).length > 0 ? item.specAttributes : undefined,
                     targetPrice: item.targetPrice ? parseFloat(item.targetPrice) : undefined,
                     targetPriceNote: item.targetPriceNote,
                 });
@@ -237,7 +294,7 @@ export default function BuyerRFPCreatePage() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+        <div className="w-full py-8 px-6 space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900">Create New RFP</h1>
                 <p className="text-sm text-muted-foreground mt-1">Build a structured sourcing event across all 8 evaluation dimensions</p>
@@ -352,9 +409,20 @@ export default function BuyerRFPCreatePage() {
                     {step === 1 && (
                         <div className="space-y-4">
                             <p className="text-sm text-muted-foreground">
-                                Define what you are sourcing. Set a <strong>target price</strong> per item to enable should-cost analysis and supplier quote comparison.
+                                Define what you are sourcing. Set a <strong>target price</strong> per item to enable should-cost analysis.
+                                {category && CATEGORY_SPEC_TEMPLATES[category] && (
+                                    <span className="text-indigo-600 font-medium"> Structured spec fields for <strong>{category}</strong> are pre-loaded below.</span>
+                                )}
                             </p>
-                            {items.map((item, idx) => (
+                            {items.map((item, idx) => {
+                                const specTemplate = category ? (CATEGORY_SPEC_TEMPLATES[category] || []) : [];
+                                const updateSpecAttr = (key: string, val: string) => {
+                                    setItems(prev => prev.map(i => i.id === item.id
+                                        ? { ...i, specAttributes: { ...i.specAttributes, [key]: val } }
+                                        : i
+                                    ));
+                                };
+                                return (
                                 <div key={item.id} className="border rounded-lg p-4 space-y-3 bg-slate-50/50">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-semibold text-slate-700">Item {idx + 1}</span>
@@ -391,8 +459,45 @@ export default function BuyerRFPCreatePage() {
                                                 value={item.targetPrice}
                                                 onChange={e => setItems(prev => prev.map(i => i.id === item.id ? { ...i, targetPrice: e.target.value } : i))} />
                                         </div>
+
+                                        {/* Section 3: Structured Technical Specifications */}
+                                        {specTemplate.length > 0 && (
+                                            <div className="col-span-2 sm:col-span-3 space-y-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Package className="h-3.5 w-3.5 text-indigo-600" />
+                                                    <Label className="text-xs font-semibold text-indigo-700">Section 3 — Technical Specifications ({category})</Label>
+                                                </div>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 p-3 bg-indigo-50/50 border border-indigo-100 rounded-lg">
+                                                    {specTemplate.map(field => (
+                                                        <div key={field.key} className="space-y-1">
+                                                            <Label className="text-xs text-slate-600">
+                                                                {field.label}{field.unit ? ` (${field.unit})` : ""}
+                                                            </Label>
+                                                            {field.type === "select" ? (
+                                                                <select
+                                                                    value={item.specAttributes[field.key] || ""}
+                                                                    onChange={e => updateSpecAttr(field.key, e.target.value)}
+                                                                    className="w-full h-8 rounded-md border border-input bg-background px-2 py-0.5 text-xs shadow-sm">
+                                                                    <option value="">— select —</option>
+                                                                    {field.options?.map(o => <option key={o}>{o}</option>)}
+                                                                </select>
+                                                            ) : (
+                                                                <Input
+                                                                    type={field.type === "number" ? "number" : "text"}
+                                                                    placeholder="—"
+                                                                    className="h-8 text-xs"
+                                                                    value={item.specAttributes[field.key] || ""}
+                                                                    onChange={e => updateSpecAttr(field.key, e.target.value)}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div className="col-span-2 sm:col-span-3 space-y-1">
-                                            <Label className="text-xs">Technical Specifications</Label>
+                                            <Label className="text-xs">Additional Specifications / Notes</Label>
                                             <Textarea placeholder="e.g. 5-ply BC flute, outer liner 200 GSM, 2-colour print, Burst Factor 16…"
                                                 rows={2} value={item.specifications}
                                                 onChange={e => setItems(prev => prev.map(i => i.id === item.id ? { ...i, specifications: e.target.value } : i))} />
@@ -405,7 +510,8 @@ export default function BuyerRFPCreatePage() {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                             <Button variant="outline" className="w-full gap-2" onClick={() => setItems(prev => [...prev, newItem()])}>
                                 <Plus className="h-4 w-4" /> Add Another Item
                             </Button>
