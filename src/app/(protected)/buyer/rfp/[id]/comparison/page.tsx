@@ -137,7 +137,18 @@ export default function RFPComparisonPage() {
             if (logRes.status === "fulfilled") setLogisticsRows(logRes.value as unknown as LogisticsRow[]);
             if (esgRes.status === "fulfilled") setEsgRows(esgRes.value as unknown as ESGRow[]);
             if (termsRes.status === "fulfilled") setTermsRows(termsRes.value as unknown as TermsRow[]);
-            if (scoresRes.status === "fulfilled") setScores(scoresRes.value as unknown as EvalScore[]);
+
+            // Scores: if none stored yet but there are submitted responses, auto-calculate
+            let fetchedScores: EvalScore[] = scoresRes.status === "fulfilled" ? (scoresRes.value as unknown as EvalScore[]) : [];
+            if (fetchedScores.length === 0 && compRes.status === "fulfilled") {
+                const comp = compRes.value as unknown as ComparisonData;
+                if (comp?.totalSuppliers > 0 || (comp?.comparisonMatrix && comp.comparisonMatrix.length > 0)) {
+                    try {
+                        fetchedScores = await apiClient.post(`/api/rfp/${rfpId}/scores/recalculate`, {}) as unknown as EvalScore[];
+                    } catch { /* ignore — scores stay empty */ }
+                }
+            }
+            setScores(fetchedScores);
         } catch { toast.error("Failed to load comparison data"); }
         finally { setLoading(false); }
     };

@@ -60,6 +60,9 @@ export default function BuyerRFPDetailPage() {
     const [emailInvDialogOpen, setEmailInvDialogOpen] = useState(false);
     const [inviteLoading, setInviteLoading] = useState(false);
 
+    // Weighted eval scores keyed by supplierId
+    const [evalScores, setEvalScores] = useState<Record<number, number>>({});
+
     // silent=true skips the full-page loading spinner (used after sub-actions like invite/add item)
     const fetchRFP = async (silent = false) => {
         try {
@@ -73,7 +76,18 @@ export default function BuyerRFPDetailPage() {
         }
     };
 
-    useEffect(() => { fetchRFP(); }, [rfpId]);
+    const fetchScores = async () => {
+        try {
+            const res = await apiClient.get(`/api/rfp/${rfpId}/scores`) as any;
+            if (Array.isArray(res) && res.length > 0) {
+                const map: Record<number, number> = {};
+                res.forEach((s: any) => { map[s.supplierId] = s.totalWeightedScore; });
+                setEvalScores(map);
+            }
+        } catch { /* scores not yet calculated — silently ignore */ }
+    };
+
+    useEffect(() => { fetchRFP(); fetchScores(); }, [rfpId]);
 
     const handlePublish = async () => {
         if (!rfp) return;
@@ -456,6 +470,7 @@ export default function BuyerRFPDetailPage() {
                                     <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Supplier</th>
                                     <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Email</th>
                                     <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Status</th>
+                                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Weighted Score</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -467,12 +482,23 @@ export default function BuyerRFPDetailPage() {
                                         SUBMITTED: "bg-green-50 text-green-700",
                                         AWARDED: "bg-violet-50 text-violet-700",
                                     }[s.status] || "bg-slate-100 text-slate-600";
+                                    const score = s.supplierId != null ? evalScores[Number(s.supplierId)] : undefined;
                                     return (
                                         <tr key={s.id} className="border-b last:border-b-0 hover:bg-slate-50">
                                             <td className="px-4 py-2.5 font-medium">{s.supplierName || "—"}</td>
                                             <td className="px-4 py-2.5 text-muted-foreground">{s.email || "—"}</td>
                                             <td className="px-4 py-2.5">
                                                 <Badge variant="secondary" className={`text-[11px] ${statusColor}`}>{s.status}</Badge>
+                                            </td>
+                                            <td className="px-4 py-2.5 text-right">
+                                                {score != null ? (
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <span className="font-semibold text-indigo-700">{score}</span>
+                                                        <span className="text-[10px] text-muted-foreground">/100</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                )}
                                             </td>
                                         </tr>
                                     );
