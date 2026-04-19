@@ -34,6 +34,7 @@ export default function SupplierDetailsPage() {
     const [supplier, setSupplier] = useState<any>(null);
     const [documents, setDocuments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState<{ code: string; message: string } | null>(null);
     const [pendingTask, setPendingTask] = useState<any>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null); // docId being acted on
     const [activeTab, setActiveTab] = useState("documents");
@@ -46,6 +47,7 @@ export default function SupplierDetailsPage() {
     const fetchData = async () => {
         try {
             setLoading(true);
+            setFetchError(null);
             const [supRes, docRes, tasksRes] = await Promise.all([
                 apiClient.get(`/api/suppliers/${supplierId}`),
                 apiClient.get(`/api/suppliers/${supplierId}/documents`),
@@ -71,8 +73,17 @@ export default function SupplierDetailsPage() {
             const tasks = tasksRes as unknown as any[];
             const task = tasks.find((t: any) => (t.supplierId || t.supplierid) === Number(supplierId));
             setPendingTask(task);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to fetch supplier details", error);
+            const status = error?.response?.status || error?.status;
+            const serverCode = error?.response?.data?.code || error?.data?.code;
+            if (status === 403 || serverCode === 'ACCESS_DENIED') {
+                setFetchError({ code: 'ACCESS_DENIED', message: "You don't have permission to view this supplier." });
+            } else if (status === 404 || serverCode === 'NOT_FOUND') {
+                setFetchError({ code: 'NOT_FOUND', message: "This supplier could not be found. It may have been removed." });
+            } else {
+                setFetchError({ code: 'ERROR', message: "Something went wrong loading this supplier. Please try again." });
+            }
         } finally {
             setLoading(false);
         }
@@ -147,7 +158,36 @@ export default function SupplierDetailsPage() {
     }, {} as Record<string, any[]>);
 
     if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    if (!supplier) return <div className="p-8 text-center">Supplier not found</div>;
+
+    if (fetchError || !supplier) {
+        const isAccessDenied = fetchError?.code === 'ACCESS_DENIED';
+        return (
+            <div className="flex flex-col items-center justify-center h-96 text-center gap-4 px-4">
+                <div className={`rounded-full p-4 ${isAccessDenied ? 'bg-amber-100' : 'bg-muted'}`}>
+                    {isAccessDenied
+                        ? <AlertCircle className="h-10 w-10 text-amber-500" />
+                        : <XCircle className="h-10 w-10 text-muted-foreground" />
+                    }
+                </div>
+                <div>
+                    <h2 className="text-lg font-semibold">
+                        {isAccessDenied ? 'Access Restricted' : fetchError?.code === 'NOT_FOUND' ? 'Supplier Not Found' : 'Unable to Load Supplier'}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                        {fetchError?.message || 'This supplier could not be found. It may have been removed or you may not have access.'}
+                    </p>
+                    {isAccessDenied && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Contact your administrator if you believe you should have access to this supplier.
+                        </p>
+                    )}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+                    ← Go Back
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -380,8 +420,16 @@ export default function SupplierDetailsPage() {
                                                                 className="text-primary hover:text-primary/80 hover:bg-primary/10"
                                                                 onClick={() => {
                                                                     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083';
-                                                                    const filePath = doc.filePath?.startsWith('/') ? doc.filePath : `/${doc.filePath}`;
-                                                                    window.open(`${baseUrl}${filePath}`, '_blank');
+                                                                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                                                                    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+                                                                    // Prefer authenticated view endpoint when we have an id — it
+                                                                    // also resolves negative pseudo-ids (pending uploads).
+                                                                    if (doc.documentId !== undefined && doc.documentId !== null) {
+                                                                        window.open(`${baseUrl}/api/documents/${doc.documentId}/view${qs}`, '_blank');
+                                                                    } else if (doc.filePath) {
+                                                                        const filePath = doc.filePath.startsWith('/') ? doc.filePath : `/${doc.filePath}`;
+                                                                        window.open(`${baseUrl}${filePath}${qs}`, '_blank');
+                                                                    }
                                                                 }}
                                                                 title="View Document"
                                                             >

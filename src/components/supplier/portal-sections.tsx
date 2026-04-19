@@ -83,6 +83,7 @@ export function DashboardOverview() {
 export function NotificationsSection() {
     const { notificationsData, fetchNotifications, markAsRead } = useNotificationStore();
     const [loading, setLoading] = useState(true);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
     const { user } = useAuthStore();
 
     useEffect(() => {
@@ -103,59 +104,101 @@ export function NotificationsSection() {
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'APPROVAL_APPROVED': return <Check className="h-4 w-4 text-green-600" />;
-            case 'APPROVAL_REJECTED': return <AlertCircle className="h-4 w-4 text-red-600" />;
-            case 'REWORK_REQUIRED': return <AlertCircle className="h-4 w-4 text-orange-600" />;
-            default: return <Bell className="h-4 w-4 text-blue-600" />;
+            case 'APPROVAL_APPROVED':      return <Check className="h-5 w-5 text-green-600" />;
+            case 'APPROVAL_REJECTED':      return <AlertCircle className="h-5 w-5 text-red-600" />;
+            case 'REWORK_REQUIRED':        return <AlertCircle className="h-5 w-5 text-orange-600" />;
+            case 'CHANGE_REQUEST_SUBMITTED': return <Check className="h-5 w-5 text-blue-600" />;
+            default: return <Bell className="h-5 w-5 text-blue-600" />;
         }
     };
 
-    const handleRead = async (id: number) => {
-        await markAsRead(id);
+    const handleRowClick = (id: number, isRead: boolean) => {
+        // Clicking a row both toggles expansion and marks as read. No separate button needed.
+        if (expandedId === id) {
+            setExpandedId(null);
+        } else {
+            setExpandedId(id);
+            if (!isRead) markAsRead(id);
+        }
     };
 
+    const sortedNotifications = [...notificationsData].sort((a: any, b: any) =>
+        new Date(b.createdAt || b.createdat || 0).getTime() - new Date(a.createdAt || a.createdat || 0).getTime()
+    );
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>System alerts and status updates</CardDescription>
+        <Card className="overflow-hidden border-none shadow-md">
+            <CardHeader className="bg-muted/30">
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-blue-600" />
+                    Notifications
+                </CardTitle>
+                <CardDescription>System alerts and status updates. Click any notification to expand and mark it as viewed.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
                 {loading ? (
-                    <div className="p-8 flex justify-center"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
-                ) : notificationsData.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground">No notifications.</div>
+                    <div className="p-12 flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                ) : sortedNotifications.length === 0 ? (
+                    <div className="p-12 text-center text-muted-foreground bg-muted/5">
+                        <Bell className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <p className="text-lg">No notifications yet</p>
+                        <p className="text-sm">New alerts will appear here</p>
+                    </div>
                 ) : (
-                    <div className="divide-y">
-                        {notificationsData.map((n: any) => {
+                    <div className="divide-y divide-border">
+                        {sortedNotifications.map((n: any) => {
                             const id = n.notificationid || n.notificationId;
                             const isRead = n.isread || n.isRead;
                             const createdAt = n.createdat || n.createdAt;
+                            const isExpanded = expandedId === id;
+
                             return (
-                                <div key={id} className={`p-4 transition-colors hover:bg-muted/50 ${!isRead ? 'bg-blue-50/50' : ''}`}>
-                                    <div className="flex items-start gap-4">
-                                        <div className={`mt-1 p-2 rounded-full ${!isRead ? 'bg-blue-100' : 'bg-muted'}`}>
-                                            {getIcon(n.type)}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className={`text-sm ${!isRead ? 'font-semibold' : ''}`}>
-                                                {n.message}
+                                <div
+                                    key={id}
+                                    className={`group transition-all ${!isRead ? 'bg-blue-50/20' : ''}`}
+                                >
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-expanded={isExpanded}
+                                        onClick={() => handleRowClick(id, !!isRead)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleRowClick(id, !!isRead);
+                                            }
+                                        }}
+                                        className="p-4 cursor-pointer flex items-center justify-between gap-4 hover:bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                    >
+                                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                                            <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${!isRead ? 'bg-blue-100' : 'bg-muted'}`}>
+                                                {getIcon(n.type)}
                                             </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {createdAt ? format(new Date(createdAt), "MMM d, h:mm a") : ""}
+                                            <div className="flex-1 min-w-0">
+                                                <div className={`flex items-center gap-2 ${!isRead ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                                                    <span className="truncate">{n.type ? n.type.replace(/_/g, ' ') : 'System Notification'}</span>
+                                                    {!isRead && <span className="h-2 w-2 rounded-full bg-blue-500" aria-label="unread" />}
+                                                </div>
+                                                <div className={`text-sm truncate ${!isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                    {n.message?.substring(0, 120)}{n.message?.length > 120 ? '…' : ''}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {createdAt ? format(new Date(createdAt), "MMM d, h:mm a") : ""}
+                                                </div>
                                             </div>
                                         </div>
-                                        {!isRead && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-                                                onClick={() => handleRead(id)}
-                                            >
-                                                Mark Read
-                                            </Button>
-                                        )}
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                        </div>
                                     </div>
+
+                                    {isExpanded && (
+                                        <div className="px-6 pb-5 pt-2 animate-in slide-in-from-top-1 duration-200">
+                                            <div className="bg-muted/50 rounded-lg p-5 border border-border/50 shadow-inner">
+                                                <div className="text-sm leading-relaxed whitespace-pre-wrap">{n.message}</div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -983,7 +1026,13 @@ export function DocumentsSection() {
                                             onClick={() => {
                                                 if (doc.filePath) {
                                                     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083';
-                                                    window.open(`${apiBase}/${doc.filePath}`, '_blank');
+                                                    // Attach JWT as a query param so deployments that
+                                                    // protect /uploads (or rewrite it through an auth
+                                                    // proxy) can still authenticate the new-tab
+                                                    // request, which cannot set an Authorization header.
+                                                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                                                    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+                                                    window.open(`${apiBase}/${doc.filePath}${qs}`, '_blank');
                                                 } else {
                                                     toast.error("File path not found.");
                                                 }
