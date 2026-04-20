@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { useSupplierOnboardingStore } from "@/lib/store/supplier-onboarding-store";
+import { useSupplierOnboardingStore, OnboardingSection } from "@/lib/store/supplier-onboarding-store";
 import { Loader2, Upload, FileText, Check, AlertCircle, ChevronDown, ChevronUp, Mail, MailOpen, Bell } from "lucide-react";
 import apiClient from "@/lib/api/client";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -17,6 +18,26 @@ import { format } from "date-fns";
 import { DashboardStats } from "./dashboard-stats";
 import { AnalyticsCharts } from "./analytics-charts";
 import { ApprovalWorkflowProgress } from "@/components/shared/ApprovalWorkflowProgress";
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Shared helper: navigate to an onboarding section.
+//
+// Why this exists:
+//   Onboarding sections live at /supplier/onboarding/<section>. Updating the
+//   Zustand store's activeSection alone doesn't change the URL, which means
+//   Next/Back buttons that only called setActiveSection() would save data but
+//   leave the user on the same page. This hook keeps the store and the URL
+//   in sync — router.push() causes the [section] route to re-render with the
+//   new section, and its own effect then updates the store.
+// ────────────────────────────────────────────────────────────────────────────────
+function useSectionNavigate() {
+    const router = useRouter();
+    const setActiveSection = useSupplierOnboardingStore((s) => s.setActiveSection);
+    return (section: OnboardingSection) => {
+        setActiveSection(section);
+        router.push(`/supplier/onboarding/${section}`);
+    };
+}
 
 // ... existing code ...
 
@@ -348,6 +369,7 @@ export function MessagesSection() {
 }
 export function CompanySection() {
     const { status, companyDetails, setCompanyDetails, markSectionComplete, supplierId, taxDetails, bankDetails, setActiveSection } = useSupplierOnboardingStore();
+    const navigateTo = useSectionNavigate();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -393,7 +415,7 @@ export function CompanySection() {
             };
             await apiClient.put(`/api/suppliers/${supplierId}`, payload);
             toast.success("Company details saved");
-            setActiveSection('address');
+            navigateTo('address');
         } catch (e: any) {
             console.error(e);
             toast.error("Failed to save: " + e.message);
@@ -475,7 +497,7 @@ export function CompanySection() {
                             <AlertCircle className="mr-2 h-4 w-4" />
                             Profile submitted - fields are locked
                         </div>
-                        <Button variant="outline" onClick={() => setActiveSection('address')}>
+                        <Button variant="outline" onClick={() => navigateTo('address')}>
                             Next: Address
                         </Button>
                     </div>
@@ -487,6 +509,7 @@ export function CompanySection() {
 
 export function AddressSection() {
     const { status, companyDetails, setCompanyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
+    const navigateTo = useSectionNavigate();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
     const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
@@ -538,7 +561,7 @@ export function AddressSection() {
                 if (newAddr?.addressId) setCompanyDetails({ addressId: newAddr.addressId });
             }
             toast.success("Address saved successfully");
-            setActiveSection('contact');
+            navigateTo('contact');
         } catch (e: any) {
             console.error(e);
             toast.error("Failed to save address");
@@ -597,7 +620,7 @@ export function AddressSection() {
                 </div>
                 {!isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('company')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('company')}>Back</Button>
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Next Step
@@ -606,8 +629,8 @@ export function AddressSection() {
                 )}
                 {isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('company')}>Back</Button>
-                        <Button variant="outline" onClick={() => setActiveSection('contact')}>
+                        <Button variant="outline" onClick={() => navigateTo('company')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('contact')}>
                             Next: Contact
                         </Button>
                     </div>
@@ -619,6 +642,7 @@ export function AddressSection() {
 
 export function ContactSection() {
     const { status, companyDetails, setCompanyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
+    const navigateTo = useSectionNavigate();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
     const isLocked = ['PENDING', 'SUBMITTED', 'IN_REVIEW', 'PENDING_APPROVAL'].includes(status);
@@ -661,7 +685,7 @@ export function ContactSection() {
                 if (newCont?.contactId) setCompanyDetails({ contactId: newCont.contactId });
             }
             toast.success("Contact details saved");
-            setActiveSection('tax');
+            navigateTo('tax');
         } catch (e: any) {
             console.error(e);
             toast.error("Failed to save contact");
@@ -714,7 +738,7 @@ export function ContactSection() {
                 </div>
                 {!isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('address')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('address')}>Back</Button>
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Next Step
@@ -723,8 +747,8 @@ export function ContactSection() {
                 )}
                 {isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('address')}>Back</Button>
-                        <Button variant="outline" onClick={() => setActiveSection('tax')}>
+                        <Button variant="outline" onClick={() => navigateTo('address')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('tax')}>
                             Next: Tax Info
                         </Button>
                     </div>
@@ -737,6 +761,7 @@ export function ContactSection() {
 // --- TAX SECTION (DYNAMIC) ---
 export function TaxSection() {
     const { status, taxDetails, setTaxDetails, companyDetails, markSectionComplete, supplierId, bankDetails, setActiveSection } = useSupplierOnboardingStore();
+    const navigateTo = useSectionNavigate();
     const { user } = useAuthStore();
     const isIndia = companyDetails.country === 'India';
     const [isSaving, setIsSaving] = useState(false);
@@ -786,7 +811,7 @@ export function TaxSection() {
             };
             await apiClient.put(`/api/suppliers/${supplierId}`, payload);
             toast.success("Tax details saved");
-            setActiveSection('bank');
+            navigateTo('bank');
         } catch (e: any) {
             console.error(e);
             toast.error("Failed to save tax details");
@@ -857,7 +882,7 @@ export function TaxSection() {
                 )}
                 {!isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('contact')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('contact')}>Back</Button>
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Next Step
@@ -866,8 +891,8 @@ export function TaxSection() {
                 )}
                 {isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('contact')}>Back</Button>
-                        <Button variant="outline" onClick={() => setActiveSection('bank')}>
+                        <Button variant="outline" onClick={() => navigateTo('contact')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('bank')}>
                             Next: Bank Details
                         </Button>
                     </div>
@@ -888,6 +913,7 @@ const REQUIRED_DOCUMENTS_MAP: Record<string, string[]> = {
 
 export function DocumentsSection() {
     const { status, documents, updateDocumentStatus, companyDetails, markSectionComplete, supplierId, setActiveSection } = useSupplierOnboardingStore();
+    const navigateTo = useSectionNavigate();
     const { user } = useAuthStore();
     const country = companyDetails.country || 'Default';
 
@@ -1075,6 +1101,7 @@ export function DocumentsSection() {
 // --- BANK SECTION ---
 export function BankSection() {
     const { status, bankDetails, setBankDetails, companyDetails, markSectionComplete, supplierId, taxDetails, setActiveSection } = useSupplierOnboardingStore();
+    const navigateTo = useSectionNavigate();
     const { user } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
     const country = companyDetails.country || '';
@@ -1158,7 +1185,7 @@ export function BankSection() {
             };
             await apiClient.put(`/api/suppliers/${supplierId}`, payload);
             toast.success("Bank details saved");
-            setActiveSection('documents');
+            navigateTo('documents');
         } catch (e: any) {
             console.error(e);
             toast.error("Failed to save bank details");
@@ -1214,7 +1241,7 @@ export function BankSection() {
                 </div>
                 {!isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('tax')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('tax')}>Back</Button>
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Next Step
@@ -1223,8 +1250,8 @@ export function BankSection() {
                 )}
                 {isLocked && (
                     <div className="flex justify-between pt-4">
-                        <Button variant="outline" onClick={() => setActiveSection('tax')}>Back</Button>
-                        <Button variant="outline" onClick={() => setActiveSection('documents')}>
+                        <Button variant="outline" onClick={() => navigateTo('tax')}>Back</Button>
+                        <Button variant="outline" onClick={() => navigateTo('documents')}>
                             Next: Documents
                         </Button>
                     </div>
