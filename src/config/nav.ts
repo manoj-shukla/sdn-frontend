@@ -111,12 +111,12 @@ export const navConfig: Record<string, NavConfigGroup> = {
         {
             category: "ONBOARDING",
             items: [
-                { title: "Company Details",    href: "/supplier/dashboard?section=company",   icon: User },
-                { title: "Registered Address", href: "/supplier/dashboard?section=address",   icon: MapPin },
-                { title: "Contact Person",     href: "/supplier/dashboard?section=contact",   icon: Users },
-                { title: "Tax Information",    href: "/supplier/dashboard?section=tax",       icon: FileText },
-                { title: "Bank Details",       href: "/supplier/dashboard?section=bank",      icon: CreditCard },
-                { title: "Documents",          href: "/supplier/dashboard?section=documents", icon: ClipboardCheck },
+                { title: "Company Details",    href: "/supplier/onboarding/company",   icon: User },
+                { title: "Registered Address", href: "/supplier/onboarding/address",   icon: MapPin },
+                { title: "Contact Person",     href: "/supplier/onboarding/contact",   icon: Users },
+                { title: "Tax Information",    href: "/supplier/onboarding/tax",       icon: FileText },
+                { title: "Bank Details",       href: "/supplier/onboarding/bank",      icon: CreditCard },
+                { title: "Documents",          href: "/supplier/onboarding/documents", icon: ClipboardCheck },
             ]
         },
         {

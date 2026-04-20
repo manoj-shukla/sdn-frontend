@@ -80,9 +80,10 @@ export function SupplierSideNav() {
 
     const isApproved    = user?.approvalStatus === 'APPROVED' || status === 'APPROVED';
     const isOnDashboard = pathname.startsWith('/supplier/dashboard');
+    const isOnOnboarding = pathname.startsWith('/supplier/onboarding');
 
     // Determine whether "Onboarding" parent item is visually active
-    const isOnboardingActive = isOnDashboard && activeSection !== 'dashboard';
+    const isOnboardingActive = isOnOnboarding || (isOnDashboard && activeSection !== 'dashboard');
 
     const showSubmitButton =
         !isApproved && status !== 'SUBMITTED' && status !== 'IN_REVIEW' && status !== 'APPROVED';
@@ -94,11 +95,19 @@ export function SupplierSideNav() {
 
     const handleOnboardingNav = (sectionId: OnboardingSection) => {
         setActiveSection(sectionId);
-        if (!isOnDashboard) router.push(`/supplier/dashboard?section=${sectionId}`);
+        // Always push to the new path-based onboarding route, from anywhere in
+        // the portal. Query-param routing ("?section=...") is deprecated.
+        if (!isOnOnboarding || pathname !== `/supplier/onboarding/${sectionId}`) {
+            router.push(`/supplier/onboarding/${sectionId}`);
+        }
     };
 
     const isLinkActive = (href: string) => {
-        if (href === '/supplier/dashboard') return pathname === '/supplier/dashboard' && (!isOnDashboard || activeSection === 'dashboard');
+        if (href === '/supplier/dashboard') {
+            // Dashboard link is only "active" when we're literally on the
+            // dashboard home — not on any onboarding sub-route.
+            return pathname === '/supplier/dashboard' && !isOnOnboarding;
+        }
         return pathname.startsWith(href);
     };
 
@@ -198,7 +207,12 @@ export function SupplierSideNav() {
                         <div className="mt-0.5 ml-3 pl-3 border-l space-y-0.5">
                             {ONBOARDING_STEPS.map(step => {
                                 const isComplete = completedSections[step.id];
-                                const isActive   = isOnDashboard && activeSection === step.id;
+                                // Active when the URL is /supplier/onboarding/<step>,
+                                // or (for legacy ?section= URLs still in-flight) when
+                                // the store's activeSection matches while on the dashboard.
+                                const isActive =
+                                    pathname === `/supplier/onboarding/${step.id}` ||
+                                    (isOnDashboard && activeSection === step.id);
                                 const isMessages = step.id === 'messages';
 
                                 return (

@@ -178,10 +178,10 @@ export function Sidebar() {
     }, []);
 
     // Determine the active nav item.
-    // For items whose href contains ?section=…, match against the Zustand store's
-    // activeSection (which is kept in sync with the URL by the dashboard page's
-    // useEffect). This avoids importing useSearchParams, which requires a Suspense
-    // boundary in Next.js App Router and would crash the sidebar.
+    // Onboarding items now use path-based routing (/supplier/onboarding/<section>),
+    // so the simple pathname.startsWith match below handles them.
+    // The legacy ?section= branch is retained for safety in case any nav item
+    // ever needs query-param-based matching again.
     const activeItem = items
         .flatMap((entry) => ("category" in entry ? entry.items : [entry]))
         .filter((item) => {

@@ -84,7 +84,7 @@ export function Header() {
 
     const navigateToSection = (section: string) => {
         setPopoverOpen(false);
-        router.push(`/supplier/dashboard?section=${section}`);
+        router.push(`/supplier/onboarding/${section}`);
     };
 
     return (

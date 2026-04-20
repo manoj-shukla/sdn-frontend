@@ -11,6 +11,7 @@ import apiClient from "@/lib/api/client";
 // Routes a non-approved supplier may access before approval
 const PRE_APPROVAL_PATHS = [
     '/supplier/dashboard',
+    '/supplier/onboarding',
     '/supplier/messages',
     '/supplier/notifications',
     '/supplier/rfi',

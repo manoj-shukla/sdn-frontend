@@ -46,9 +46,22 @@ function SupplierDashboardContent() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const router = useRouter();
 
-    // Sync section from URL — reset to 'dashboard' home when no section param
+    // Sync section from URL — reset to 'dashboard' home when no section param.
+    //
+    // Backward-compat: onboarding sub-pages used to live at
+    //   /supplier/dashboard?section=<section>
+    // They now live at
+    //   /supplier/onboarding/<section>
+    // If we receive a legacy query-param URL, redirect to the new path-based one.
     useEffect(() => {
         const section = searchParams.get('section');
+        if (section && section !== 'dashboard') {
+            const VALID = ['company', 'address', 'contact', 'tax', 'bank', 'documents', 'messages'];
+            if (VALID.includes(section)) {
+                router.replace(`/supplier/onboarding/${section}`);
+                return;
+            }
+        }
         setActiveSection(section ? (section as any) : 'dashboard');
     }, [searchParams]);
 
