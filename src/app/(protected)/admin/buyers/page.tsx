@@ -197,10 +197,13 @@ export default function AdminBuyersPage() {
             setIsDialogOpen(false);
         } catch (e: any) {
             const apiError = e?.response?.data?.error;
-            if (apiError === "Username is already taken") {
-                toast.error("Username is already taken");
-            } else if (apiError === "Invalid email format") {
-                toast.error("Invalid email format");
+            if (
+                apiError === "Username is already taken" ||
+                apiError === "Email is already taken" ||
+                apiError === "Buyer code is already taken" ||
+                apiError === "Invalid email format"
+            ) {
+                toast.error(apiError);
             } else {
                 toast.error(editingBuyer ? `Failed to update buyer ${formData.buyerName}` : `Had issue adding buyer ${formData.buyerName}`);
             }
@@ -331,27 +334,95 @@ export default function AdminBuyersPage() {
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Buyer Name</Label>
-                            <Input
-                                id="name"
-                                value={formData.buyerName}
-                                onChange={(e) => setFormData({ ...formData, buyerName: e.target.value })}
-                            />
+                            <div className="relative">
+                                <Input
+                                    id="name"
+                                    value={formData.buyerName}
+                                    onChange={(e) => setFormData({ ...formData, buyerName: e.target.value })}
+                                    className="pr-9"
+                                    aria-invalid={!editingBuyer && (availability.conflicts.buyerName || availability.conflicts.username) ? true : undefined}
+                                />
+                                {!editingBuyer && trimmedName.length > 0 && (
+                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                        {availability.status === "checking" && (
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        )}
+                                        {availability.status === "available" &&
+                                            !availability.conflicts.buyerName &&
+                                            !availability.conflicts.username && (
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            )}
+                                        {(availability.conflicts.buyerName || availability.conflicts.username) && (
+                                            <X className="h-4 w-4 text-destructive" />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {!editingBuyer && (availability.conflicts.buyerName || availability.conflicts.username) && (
+                                <p className="text-xs text-destructive">
+                                    This name is already in use as a buyer or admin username. Please choose a different one.
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="code">Buyer Code</Label>
-                            <Input
-                                id="code"
-                                value={formData.buyerCode}
-                                onChange={(e) => setFormData({ ...formData, buyerCode: e.target.value })}
-                            />
+                            <div className="relative">
+                                <Input
+                                    id="code"
+                                    value={formData.buyerCode}
+                                    onChange={(e) => setFormData({ ...formData, buyerCode: e.target.value })}
+                                    className="pr-9"
+                                    aria-invalid={!editingBuyer && availability.conflicts.buyerCode ? true : undefined}
+                                />
+                                {!editingBuyer && trimmedCode.length > 0 && (
+                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                        {availability.status === "checking" && (
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        )}
+                                        {availability.status === "available" && !availability.conflicts.buyerCode && (
+                                            <Check className="h-4 w-4 text-green-600" />
+                                        )}
+                                        {availability.conflicts.buyerCode && (
+                                            <X className="h-4 w-4 text-destructive" />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {!editingBuyer && availability.conflicts.buyerCode && (
+                                <p className="text-xs text-destructive">
+                                    This buyer code is already taken. Please choose a different one.
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
+                            <div className="relative">
+                                <Input
+                                    id="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="pr-9"
+                                    aria-invalid={!editingBuyer && availability.conflicts.email ? true : undefined}
+                                />
+                                {!editingBuyer && trimmedEmail.length > 0 && (
+                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                        {availability.status === "checking" && (
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        )}
+                                        {availability.status === "available" && !availability.conflicts.email && (
+                                            <Check className="h-4 w-4 text-green-600" />
+                                        )}
+                                        {availability.conflicts.email && (
+                                            <X className="h-4 w-4 text-destructive" />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {!editingBuyer && availability.conflicts.email && (
+                                <p className="text-xs text-destructive">
+                                    This email is already registered. Please use a different email address.
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="country">Country</Label>
@@ -399,9 +470,20 @@ export default function AdminBuyersPage() {
                             </div>
                         )}
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                        {!editingBuyer && availability.status === "checking" && (
+                            <p className="mr-auto flex items-center gap-2 text-xs text-muted-foreground">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Checking availability…
+                            </p>
+                        )}
+                        {!editingBuyer && availability.status === "taken" && (
+                            <p className="mr-auto text-xs text-destructive">
+                                Please resolve the conflicts above before saving.
+                            </p>
+                        )}
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSave}>Save Buyer</Button>
+                        <Button onClick={handleSave} disabled={isSaveDisabled}>Save Buyer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
