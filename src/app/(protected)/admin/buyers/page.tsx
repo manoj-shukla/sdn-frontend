@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Search, MoreHorizontal, UserPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MoreHorizontal, UserPlus, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import apiClient from "@/lib/api/client";
 import { Loader2 } from "lucide-react";
 import { useAdminRole } from "../context/AdminRoleContext";
@@ -64,6 +64,84 @@ export default function AdminBuyersPage() {
         password: "",
         isSandboxActive: false
     });
+
+    // ── Upfront availability check ────────────────────────────────────────────
+    // We hit GET /api/buyers/check-availability with a short debounce as the
+    // admin types. This surfaces conflicts (buyer name, buyer code, email
+    // already in use) immediately, so the Save button can be disabled until
+    // the identity is unique — preventing the partial-creation error where a
+    // buyer row was committed but the linked admin user INSERT then failed.
+    type AvailabilityState = {
+        status: "idle" | "checking" | "available" | "taken";
+        conflicts: {
+            buyerName?: boolean;
+            buyerCode?: boolean;
+            email?: boolean;
+            username?: boolean;
+        };
+    };
+    const [availability, setAvailability] = useState<AvailabilityState>({ status: "idle", conflicts: {} });
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const requestIdRef = useRef(0);
+
+    const trimmedName = formData.buyerName.trim();
+    const trimmedCode = formData.buyerCode.trim();
+    const trimmedEmail = formData.email.trim();
+
+    useEffect(() => {
+        // Availability check is only relevant when creating a buyer.
+        // On edit, skip — the admin may legitimately keep the same values.
+        if (editingBuyer || !isDialogOpen) {
+            setAvailability({ status: "idle", conflicts: {} });
+            return;
+        }
+        if (!trimmedName && !trimmedCode && !trimmedEmail) {
+            setAvailability({ status: "idle", conflicts: {} });
+            return;
+        }
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        setAvailability((prev) => ({ ...prev, status: "checking" }));
+
+        debounceRef.current = setTimeout(async () => {
+            const myId = ++requestIdRef.current;
+            try {
+                const params = new URLSearchParams();
+                if (trimmedName) params.set("buyerName", trimmedName);
+                if (trimmedCode) params.set("buyerCode", trimmedCode);
+                if (trimmedEmail) params.set("email", trimmedEmail);
+                const res = (await apiClient.get(`/api/buyers/check-availability?${params.toString()}`)) as {
+                    available: boolean;
+                    conflicts: AvailabilityState["conflicts"];
+                };
+                // Ignore stale responses if a newer request has started.
+                if (myId !== requestIdRef.current) return;
+                setAvailability({
+                    status: res.available ? "available" : "taken",
+                    conflicts: res.conflicts || {},
+                });
+            } catch {
+                if (myId !== requestIdRef.current) return;
+                // On network error, don't block submission — let the server
+                // decide. Reset to idle so the Save button stays enabled.
+                setAvailability({ status: "idle", conflicts: {} });
+            }
+        }, 400);
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, [trimmedName, trimmedCode, trimmedEmail, editingBuyer, isDialogOpen]);
+
+    // Save is disabled when the form is still resolving uniqueness, or when
+    // the server reports a conflict (only during Create — Edit is unaffected).
+    const isSaveDisabled = useMemo(() => {
+        if (editingBuyer) return false;
+        if (!trimmedName || !trimmedEmail) return true;
+        if (availability.status === "checking") return true;
+        if (availability.status === "taken") return true;
+        return false;
+    }, [editingBuyer, trimmedName, trimmedEmail, availability.status]);
 
     const fetchBuyers = async () => {
         try {
