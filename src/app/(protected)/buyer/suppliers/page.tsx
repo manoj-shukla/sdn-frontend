@@ -62,6 +62,49 @@ export default function BuyerSuppliersPage() {
         workflowId: "", isPreApproved: false, internalCode: "", buyerComments: ""
     });
 
+    // -- Availability checking for email/internal-code conflict prevention --
+    type AvailabilityState = {
+        status: "idle" | "checking" | "available" | "taken";
+        conflicts: {
+            email?: boolean;
+            internalCode?: boolean;
+        };
+    };
+    const [availability, setAvailability] = useState<AvailabilityState>({ status: "idle", conflicts: {} });
+    const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
+
+    useEffect(() => {
+        const trimmedEmail = formData.email.trim();
+        const trimmedCode = formData.internalCode.trim();
+
+        if (!trimmedEmail && !trimmedCode) {
+            setAvailability({ status: "idle", conflicts: {} });
+            return;
+        }
+
+        const debounce = setTimeout(async () => {
+            setIsAvailabilityLoading(true);
+            try {
+                const params = new URLSearchParams();
+                if (trimmedEmail) params.set("email", trimmedEmail);
+                if (trimmedCode) params.set("internalCode", trimmedCode);
+
+                const res = await apiClient.get(`/api/suppliers/check-availability?${params.toString()}`) as any;
+                setAvailability({
+                    status: res.available ? "available" : "taken",
+                    conflicts: res.conflicts || {}
+                });
+            } catch (err) {
+                console.error("Availability check failed", err);
+                setAvailability({ status: "idle", conflicts: {} });
+            } finally {
+                setIsAvailabilityLoading(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(debounce);
+    }, [formData.email, formData.internalCode]);
+
     const [showLinkDialog, setShowLinkDialog] = useState(false);
     const [newInvitationLink, setNewInvitationLink] = useState("");
     const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -581,23 +624,54 @@ export default function BuyerSuppliersPage() {
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Primary Contact Email</Label>
-                                        <Input
-                                            type="email"
-                                            placeholder="finance@supplier.com"
-                                            value={formData.email}
-                                            onChange={e => {
-                                                setFormData({ ...formData, email: e.target.value });
-                                                if (errors.email) setErrors({ ...errors, email: "" });
-                                            }}
-                                            className={errors.email ? "border-red-500" : ""}
-                                        />
-                                        {errors.email ? (
-                                            <p className="text-sm text-red-500">{errors.email}</p>
-                                        ) : (
-                                            <p className="text-[0.8rem] text-muted-foreground">Used for login and notifications.</p>
-                                        )}
-                                    </div>
+                                         <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Primary Contact Email</Label>
+                                         <div className="relative">
+                                             <Input
+                                                 type="email"
+                                                 placeholder="finance@supplier.com"
+                                                 value={formData.email}
+                                                 onChange={e => {
+                                                     setFormData({ ...formData, email: e.target.value });
+                                                     if (errors.email) setErrors({ ...errors, email: "" });
+                                                 }}
+                                                 className={errors.email || availability.conflicts.email ? "border-red-500 pr-10" : "pr-10"}
+                                             />
+                                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                                 {isAvailabilityLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                                                 {!isAvailabilityLoading && availability.status === "available" && formData.email && !availability.conflicts.email && <Check className="h-4 w-4 text-green-600" />}
+                                                 {!isAvailabilityLoading && availability.conflicts.email && <AlertCircle className="h-4 w-4 text-red-500" />}
+                                             </div>
+                                         </div>
+                                         {errors.email ? (
+                                             <p className="text-sm text-red-500">{errors.email}</p>
+                                         ) : availability.conflicts.email ? (
+                                             <p className="text-sm text-red-500">This email is already associated with another supplier or invitation.</p>
+                                         ) : (
+                                             <p className="text-[0.8rem] text-muted-foreground">Used for login and notifications.</p>
+                                         )}
+                                     </div>
+
+                                     <div className="space-y-2">
+                                         <Label>Internal Buyer Code (Optional)</Label>
+                                         <div className="relative">
+                                             <Input
+                                                 placeholder="e.g. VEN-001"
+                                                 value={formData.internalCode}
+                                                 onChange={e => setFormData({ ...formData, internalCode: e.target.value })}
+                                                 className={availability.conflicts.internalCode ? "border-red-500 pr-10" : "pr-10"}
+                                             />
+                                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                                 {isAvailabilityLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                                                 {!isAvailabilityLoading && availability.status === "available" && formData.internalCode && !availability.conflicts.internalCode && <Check className="h-4 w-4 text-green-600" />}
+                                                 {!isAvailabilityLoading && availability.conflicts.internalCode && <AlertCircle className="h-4 w-4 text-red-500" />}
+                                             </div>
+                                         </div>
+                                         {availability.conflicts.internalCode ? (
+                                             <p className="text-sm text-red-500">This internal code is already in use.</p>
+                                         ) : (
+                                             <p className="text-[0.8rem] text-muted-foreground">Your internal reference for this supplier.</p>
+                                         )}
+                                     </div>
 
                                     <div className="space-y-2">
                                         <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Business Type</Label>
@@ -625,7 +699,7 @@ export default function BuyerSuppliersPage() {
                             })}>
                                 Reset Form
                             </Button>
-                            <Button size="lg" onClick={handleSendInviteClick} disabled={sending}>
+                            <Button size="lg" onClick={handleSendInviteClick} disabled={sending || availability.status === "taken" || isAvailabilityLoading}>
                                 {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Send Invitation
                             </Button>
@@ -651,6 +725,12 @@ export default function BuyerSuppliersPage() {
                             <div><span className="text-muted-foreground block">Country (Locked)</span><span className="font-semibold">{formData.country}</span></div>
                             <div><span className="text-muted-foreground block">Business Type (Locked)</span><span className="font-semibold">{formData.supplierType}</span></div>
                             <div><span className="text-muted-foreground block">Email</span><span className="font-semibold">{formData.email}</span></div>
+                            {formData.internalCode && (
+                                <div className="col-span-2 border-t pt-2 mt-2">
+                                    <span className="text-muted-foreground block">Internal Buyer Code</span>
+                                    <span className="font-semibold">{formData.internalCode}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-sm flex gap-2">
                             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
