@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
     ArrowLeft, Loader2, Users, Package, BarChart2, Trophy,
-    Plus, Trash2, Send, Lock, Edit2, Check, X, Search, XCircle
+    Plus, Trash2, Send, Lock, Edit2, Check, X, Search, XCircle, Calculator
 } from "lucide-react";
 import { toast } from "sonner";
 import type { RFP, RFPItem, RFPSupplier } from "@/types/rfp";
@@ -271,6 +271,9 @@ export default function BuyerRFPDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => router.push(`/buyer/rfp/${rfpId}/should-cost`)} className="gap-1.5">
+                        <Calculator className="h-4 w-4" /> Should-Cost
+                    </Button>
                     {isDraft && (
                         <Button onClick={handlePublish} disabled={actionLoading} className="bg-indigo-600 hover:bg-indigo-700 gap-1.5">
                             {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

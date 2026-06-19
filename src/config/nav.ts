@@ -12,7 +12,6 @@ import {
     GitBranch,
     CheckCircle,
     BarChart,
-    Settings,
     CreditCard,
     MapPin,
     Bell,
@@ -27,11 +26,11 @@ import {
     Briefcase,
     Building2,
     Link,
-    Store,
     ShoppingBag,
     History,
     FileCheck,
-    HelpCircle
+    HelpCircle,
+    Calculator
 } from "lucide-react";
 
 export interface NavItem {
@@ -74,7 +73,6 @@ export const navConfig: Record<string, NavConfigGroup> = {
                 { title: "Onboarding", href: "/buyer/onboarding", icon: UserPlus },
                 { title: "Risk & Compliance", href: "/buyer/compliance", icon: Shield },
                 { title: "Performance", href: "/buyer/performance", icon: TrendingUp },
-                { title: "Supplier Portal", href: "/buyer/portal", icon: Store },
             ]
         },
         {
@@ -83,6 +81,7 @@ export const navConfig: Record<string, NavConfigGroup> = {
                 { title: "RFI Module", href: "/buyer/rfi", icon: ClipboardList },
                 { title: "RFQ / RFP", href: "/buyer/rfp", icon: FileText },
                 { title: "Auctions", href: "/buyer/auctions", icon: Zap },
+                { title: "Should-Cost Models", href: "/buyer/cost-models", icon: Calculator },
                 { title: "Bid Analysis", href: "/buyer/bids", icon: BarChart },
                 { title: "Award Decisions", href: "/buyer/awards", icon: Trophy },
                 { title: "Contracts", href: "/buyer/contracts", icon: FileSignature },
@@ -124,6 +123,7 @@ export const navConfig: Record<string, NavConfigGroup> = {
             items: [
                 { title: "RFI Inbox", href: "/supplier/rfi", icon: ClipboardList },
                 { title: "RFP Invitations", href: "/supplier/rfp", icon: FileText },
+                { title: "Live Auctions", href: "/supplier/auctions", icon: Zap },
                 { title: "My Bids", href: "/supplier/bids", icon: Hammer },
                 { title: "Awards", href: "/supplier/awards", icon: Trophy },
                 { title: "Bid History", href: "/supplier/history", icon: History },
@@ -144,7 +144,6 @@ export const navConfig: Record<string, NavConfigGroup> = {
                 { title: "Certifications", href: "/supplier/certifications", icon: FileCheck },
                 { title: "Performance", href: "/supplier/performance", icon: BarChart },
                 { title: "Company Profile", href: "/supplier/profile", icon: User },
-                { title: "Settings", href: "/supplier/settings", icon: Settings },
             ]
         }
     ],
